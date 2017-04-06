@@ -10,7 +10,6 @@ public class Servidor implements Runnable
 {
 	public List<Usuario> usuariosConectados;
 	private ServerSocket socketS;
-	private Socket socketC;
 	private Thread thread;
 	private List<ChatServerThread> chats;
 	
@@ -29,7 +28,6 @@ public class Servidor implements Runnable
 		this.start();
 	}
 	
-	@Override
 	public void run()
 	{
 		while (thread != null)
@@ -64,7 +62,7 @@ public class Servidor implements Runnable
 	
 	public void addUsuario(Usuario usuario)
 	{
-		this.usuariosConectados.add(usuario);
+		usuariosConectados.add(usuario);
 	}
 	
 	public Usuario getUsuario(String id)
@@ -76,7 +74,7 @@ public class Servidor implements Runnable
 	{
 		if (thread == null)
 	    {
-			thread = new Thread(this); 
+			thread = new Thread(this); //se encarga de llamar al metodo run()
 	        thread.start();
 	    }
 	}
@@ -85,7 +83,7 @@ public class Servidor implements Runnable
 	{
 		if (thread != null)
 	    {
-			thread.stop();
+			thread.interrupt();
 	        thread = null;
 	    }
 	}
@@ -93,5 +91,6 @@ public class Servidor implements Runnable
 	public static void main(String args[])
 	{
 		Servidor server  = new Servidor(2023);
+		server.start();
 	}
 }
