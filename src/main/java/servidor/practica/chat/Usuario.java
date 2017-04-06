@@ -1,3 +1,5 @@
+package servidor.practica.chat;
+
 import java.net.Socket;
 
 public class Usuario {

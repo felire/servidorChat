@@ -1,3 +1,5 @@
+package servidor.practica.chat;
+
 import java.util.List;
 
 public class Conversacion {
