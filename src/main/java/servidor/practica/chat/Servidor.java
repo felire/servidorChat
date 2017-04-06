@@ -25,6 +25,7 @@ public class Servidor implements Runnable{
 		System.out.println("Arranca server..");
 		this.start();
 	}
+	
 	@Override
 	public void run() {
 		while (thread != null)
@@ -54,7 +55,7 @@ public class Servidor implements Runnable{
 	}
 	
 	public Usuario darUsuario(String id){
-		List<Usuario> lista = this.usuariosConectados.stream().filter(u->u.soyUsuario(id)).collect(Collectors.toList());
+		List<Usuario> lista =this.usuariosConectados.stream().filter(u->u.soyUsuario(id)).collect(Collectors.toList());
 		if(lista.size() == 0){
 			return null;
 		}
