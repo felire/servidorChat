@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 
 public class Servidor implements Runnable
@@ -16,12 +17,14 @@ public class Servidor implements Runnable
 	private List<ChatServerThread> chats;
 	private Pendientes mensajesPendientes;
 	private Thread threadPendientes;
+	Semaphore semaforo;
 	public Servidor(int puerto)
 	{
 		usuariosConectados = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
 		mensajesPendientes = new Pendientes(this);
 		threadPendientes = new Thread(mensajesPendientes);
+		semaforo = new Semaphore(1);
 		threadPendientes.start();
 		try 
 		{
@@ -70,12 +73,26 @@ public class Servidor implements Runnable
 	
 	public void addUsuario(Usuario usuario)
 	{
+		try {
+			semaforo.acquire();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		this.usuariosConectados.add(usuario);
+		semaforo.release();
 	}
 	
 	public Usuario getUsuario(String id)
 	{
+		try {
+			semaforo.acquire();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		List<Usuario> lista =this.usuariosConectados.stream().filter(u->u.soyUsuario(id)).collect(Collectors.toList());
+		semaforo.release();
 		 		if(lista.size() == 0){
 		 			return null;
 		 		}

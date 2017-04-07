@@ -16,6 +16,7 @@ public class Mensaje {
 		if(usuarioReceptor == null){
 			
 		}else{
+			System.out.println("Encontrado!!!!!");
 			usuarioReceptor.recibirMensaje(emisor, mensaje);
 			pendientes.sacarPendiente(this);
 		}
