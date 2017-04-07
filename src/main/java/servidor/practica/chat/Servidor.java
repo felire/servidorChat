@@ -17,6 +17,7 @@ public class Servidor implements Runnable
 	public Servidor(int puerto)
 	{
 		usuariosConectados = new ArrayList<Usuario>();
+		chats = new ArrayList<ChatServerThread>();
 		try 
 		{
 			socketS = new ServerSocket(puerto);
