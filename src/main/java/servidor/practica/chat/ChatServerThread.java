@@ -12,6 +12,7 @@ public class ChatServerThread extends Thread
 	private int ID = -1;
 	private DataInputStream streamIn =  null;
 	private DataOutputStream streamOut = null;
+	private String idUsuario;
 	
 	public ChatServerThread(Servidor _server, Socket _socket)
 	{
@@ -26,12 +27,16 @@ public class ChatServerThread extends Thread
 		try
 		{
 			String id = streamIn.readUTF();
+			this.idUsuario = id;
+			String mensaje;
 			System.out.println(id);
 			Usuario usuario = new Usuario(socket, id);
 			server.addUsuario(usuario);
 			while (true)
 			{
-				streamIn.readUTF(); //Queda  a la espera de nuevos mensajes.
+				id = streamIn.readUTF(); //A quien le quiero hablar, el id ahora no es mas el del user dueño del Socket, es de la persona a la que le hablamos
+				mensaje = streamIn.readUTF(); //Mensaje que mando
+				server.enviarMensaje(idUsuario,id, mensaje);
 			}
 		}
 		catch(IOException ioe) 

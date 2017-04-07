@@ -94,4 +94,8 @@ public class Servidor implements Runnable
 	{
 		Servidor server  = new Servidor(2023);
 	}
+
+	public void enviarMensaje(String idEmisor,String idReceptor, String mensaje) {
+		this.getUsuario(idReceptor).recibirMensaje(idEmisor, mensaje);
+	}
 }
