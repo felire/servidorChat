@@ -28,7 +28,7 @@ public class Usuario
 	}
 	public void recibirMensaje(String emisor, String mensaje){
 		try {
-			streamOut.writeUTF(id);	 
+			streamOut.writeUTF(emisor);	 
 			streamOut.writeUTF(mensaje);
 		}
 		catch (IOException e) {

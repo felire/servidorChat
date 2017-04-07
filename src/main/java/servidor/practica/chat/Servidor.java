@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Servidor implements Runnable
 {
@@ -13,11 +14,15 @@ public class Servidor implements Runnable
 	private Socket socketC;
 	private Thread thread;
 	private List<ChatServerThread> chats;
-	
+	private Pendientes mensajesPendientes;
+	private Thread threadPendientes;
 	public Servidor(int puerto)
 	{
 		usuariosConectados = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
+		mensajesPendientes = new Pendientes(this);
+		threadPendientes = new Thread(mensajesPendientes);
+		threadPendientes.start();
 		try 
 		{
 			socketS = new ServerSocket(puerto);
@@ -70,7 +75,13 @@ public class Servidor implements Runnable
 	
 	public Usuario getUsuario(String id)
 	{
-		return this.usuariosConectados.stream().filter(usr->usr.soyUsuario(id)).findFirst().orElseGet(null);
+		List<Usuario> lista =this.usuariosConectados.stream().filter(u->u.soyUsuario(id)).collect(Collectors.toList());
+		 		if(lista.size() == 0){
+		 			return null;
+		 		}
+		 		else{
+		 			return lista.get(0);
+		 		}
 	}
 	
 	public void start()
@@ -97,6 +108,15 @@ public class Servidor implements Runnable
 	}
 
 	public void enviarMensaje(String idEmisor,String idReceptor, String mensaje) {
-		this.getUsuario(idReceptor).recibirMensaje(idEmisor, mensaje);
+		Usuario receptor= this.getUsuario(idReceptor);
+		if(receptor == null){
+			System.out.println("Tendriamos que entrar aca...");
+			Mensaje mensajeP = new Mensaje(idEmisor,idReceptor,mensaje);
+			mensajesPendientes.addMensaje(mensajeP);
+		}
+		else{
+			System.out.println("no aca..");
+			receptor.recibirMensaje(idEmisor, mensaje);
+		}
 	}
 }
