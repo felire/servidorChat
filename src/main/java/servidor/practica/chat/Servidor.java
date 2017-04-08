@@ -5,6 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 
 public class Servidor implements Runnable
 {
@@ -12,10 +14,17 @@ public class Servidor implements Runnable
 	private ServerSocket socketS;
 	private Thread thread;
 	private List<ChatServerThread> chats;
-	
+	private Pendientes mensajesPendientes;
+	private Thread threadPendientes;
+	Semaphore semaforo;
 	public Servidor(int puerto)
 	{
 		usuariosConectados = new ArrayList<Usuario>();
+		chats = new ArrayList<ChatServerThread>();
+		mensajesPendientes = new Pendientes(this);
+		threadPendientes = new Thread(mensajesPendientes);
+		semaforo = new Semaphore(1);
+		threadPendientes.start();
 		try 
 		{
 			socketS = new ServerSocket(puerto);
@@ -62,12 +71,32 @@ public class Servidor implements Runnable
 	
 	public void addUsuario(Usuario usuario)
 	{
-		usuariosConectados.add(usuario);
+		try {
+			semaforo.acquire();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		this.usuariosConectados.add(usuario);
+		semaforo.release();
 	}
 	
 	public Usuario getUsuario(String id)
 	{
-		return this.usuariosConectados.stream().filter(usr->usr.soyUsuario(id)).findFirst().orElseGet(null);
+		try {
+			semaforo.acquire();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		List<Usuario> lista =this.usuariosConectados.stream().filter(u->u.soyUsuario(id)).collect(Collectors.toList());
+		semaforo.release();
+		 		if(lista.size() == 0){
+		 			return null;
+		 		}
+		 		else{
+		 			return lista.get(0);
+		 		}
 	}
 	
 	public void start()
@@ -92,5 +121,18 @@ public class Servidor implements Runnable
 	{
 		Servidor server  = new Servidor(2023);
 		server.start();
+	}
+
+	public void enviarMensaje(String idEmisor,String idReceptor, String mensaje) {
+		Usuario receptor= this.getUsuario(idReceptor);
+		if(receptor == null){
+			System.out.println("Tendriamos que entrar aca...");
+			Mensaje mensajeP = new Mensaje(idEmisor,idReceptor,mensaje);
+			mensajesPendientes.addMensaje(mensajeP);
+		}
+		else{
+			System.out.println("no aca..");
+			receptor.recibirMensaje(idEmisor, mensaje);
+		}
 	}
 }
