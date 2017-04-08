@@ -24,9 +24,8 @@ public class Servidor implements Runnable
 		if(obj == null)
 		{
 			obj = new Servidor(2023);
-			return obj;
 		}
-		else return obj;
+		return obj;
 	}
 	
 	public static Servidor obj(int puerto)
@@ -34,9 +33,8 @@ public class Servidor implements Runnable
 		if(obj == null)
 		{
 			obj = new Servidor(puerto);
-			return obj;
 		}
-		else return obj;
+		return obj;
 	}
 	
 	public Servidor(int puerto)
