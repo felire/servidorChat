@@ -54,7 +54,7 @@ public class ChatServerThread extends Thread
 	
 	public void close() throws IOException
 	{
-		Servidor.obj().seDesconectoUsuario(socket);
+		if(idUsuario != null) Servidor.obj().seDesconectoUsuario(idUsuario);
 		if (socket != null) socket.close();
 		if (streamIn != null) streamIn.close();
 	}

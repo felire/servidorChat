@@ -89,9 +89,9 @@ public class Servidor implements Runnable
 	    }
 	}
 	
-	public void seDesconectoUsuario(Socket socket)
+	public void seDesconectoUsuario(String id)
 	{
-		Usuario usr = this.getUsuario(socket);
+		Usuario usr = this.getUsuario(id);
 		if(usr != null) 
 		{
 			try {
@@ -123,23 +123,6 @@ public class Servidor implements Runnable
 			e.printStackTrace();
 		}
 		List<Usuario> lista = usuariosConectados.stream().filter(u->u.soyUsuario(id)).collect(Collectors.toList());
-		semaforo.release();
-		 		if(lista.size() == 0){
-		 			return null;
-		 		}
-		 		else{
-		 			return lista.get(0);
-		 		}
-	}
-	
-	public Usuario getUsuario(Socket socket)
-	{
-		try {
-			semaforo.acquire();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		List<Usuario> lista = usuariosConectados.stream().filter(u->u.soyUsuario(socket)).collect(Collectors.toList());
 		semaforo.release();
 		 		if(lista.size() == 0){
 		 			return null;
