@@ -6,8 +6,8 @@ import java.net.Socket;
 
 public class Usuario 
 {
-	String id;
-	Socket socket;
+	public String id;
+	public Socket socket;
 	private DataOutputStream streamOut; //Con el output basta, el streamIn lo maneja cada hilo
 	
 	public Usuario(Socket socket, String id)

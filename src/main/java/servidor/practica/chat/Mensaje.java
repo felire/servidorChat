@@ -11,11 +11,6 @@ public class Mensaje {
 		this.mensaje = mensaje;
 	}
 	
-	public static String terminar_conexion()
-	{
-		return "end_of_conection";
-	}
-	
 	public void intentarEnviar(Pendientes pendientes, Servidor server){
 		Usuario usuarioReceptor = server.getUsuario(receptor);
 		if(usuarioReceptor == null){

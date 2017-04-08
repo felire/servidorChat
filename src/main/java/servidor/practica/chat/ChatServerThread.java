@@ -8,15 +8,13 @@ import java.net.Socket;
 public class ChatServerThread extends Thread
 {
 	private Socket socket = null;
-	private Servidor server = null;
 	private int ID = -1;
 	private DataInputStream streamIn =  null;
 	private DataOutputStream streamOut = null;
 	private String idUsuario;
 	
-	public ChatServerThread(Servidor _server, Socket _socket)
+	public ChatServerThread(Socket _socket)
 	{
-		server = _server;
 		socket = _socket;
 		ID = socket.getPort();
 	}
@@ -31,13 +29,13 @@ public class ChatServerThread extends Thread
 			String mensaje;
 			System.out.println(id);
 			Usuario usuario = new Usuario(socket, id);
-			server.addUsuario(usuario);
+			Servidor.obj().addUsuario(usuario);
 			while(true)
 			{
 				id = streamIn.readUTF(); //A quien le quiero hablar, el id ahora no es mas el del user dueño del Socket, es de la persona a la que le hablamos
 				mensaje = streamIn.readUTF(); //Mensaje que mando
 				System.out.println(mensaje);
-				server.enviarMensaje(idUsuario,id, mensaje);
+				Servidor.obj().enviarMensaje(idUsuario,id, mensaje);
 			}
 		}catch(IOException ioe) {
 			try{
@@ -56,7 +54,7 @@ public class ChatServerThread extends Thread
 	
 	public void close() throws IOException
 	{
-		if(server != null) server.seDesconectoUsuario(socket);
+		Servidor.obj().seDesconectoUsuario(socket);
 		if (socket != null) socket.close();
 		if (streamIn != null) streamIn.close();
 	}

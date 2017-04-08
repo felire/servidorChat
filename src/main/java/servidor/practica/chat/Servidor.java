@@ -11,12 +11,33 @@ import java.util.stream.Collectors;
 public class Servidor implements Runnable
 {
 	public List<Usuario> usuariosConectados;
+	private static Servidor obj = null;
 	private ServerSocket socketS;
 	private Thread thread;
 	private List<ChatServerThread> chats;
 	private Pendientes mensajesPendientes;
 	private Thread threadPendientes;
 	private Semaphore semaforo;
+	
+	public static Servidor obj()
+	{
+		if(obj == null)
+		{
+			obj = new Servidor(2023);
+			return obj;
+		}
+		else return obj;
+	}
+	
+	public static Servidor obj(int puerto)
+	{
+		if(obj == null)
+		{
+			obj = new Servidor(puerto);
+			return obj;
+		}
+		else return obj;
+	}
 	
 	public Servidor(int puerto)
 	{
@@ -57,7 +78,7 @@ public class Servidor implements Runnable
 	public void addThread(Socket socket)
 	{
 		System.out.println("Client accepted: " + socket);
-		ChatServerThread peticionCliente = new ChatServerThread(this, socket);
+		ChatServerThread peticionCliente = new ChatServerThread(socket);
 		chats.add(peticionCliente);
 	    try
 	    {  
@@ -103,7 +124,7 @@ public class Servidor implements Runnable
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		List<Usuario> lista =this.usuariosConectados.stream().filter(u->u.soyUsuario(id)).collect(Collectors.toList());
+		List<Usuario> lista = usuariosConectados.stream().filter(u->u.soyUsuario(id)).collect(Collectors.toList());
 		semaforo.release();
 		 		if(lista.size() == 0){
 		 			return null;
@@ -120,7 +141,7 @@ public class Servidor implements Runnable
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		List<Usuario> lista =this.usuariosConectados.stream().filter(u->u.soyUsuario(socket)).collect(Collectors.toList());
+		List<Usuario> lista = usuariosConectados.stream().filter(u->u.soyUsuario(socket)).collect(Collectors.toList());
 		semaforo.release();
 		 		if(lista.size() == 0){
 		 			return null;
@@ -150,8 +171,7 @@ public class Servidor implements Runnable
 	
 	public static void main(String args[])
 	{
-		Servidor server  = new Servidor(2023);
-		server.start();
+		Servidor.obj(2023).start();
 	}
 
 	public void enviarMensaje(String idEmisor,String idReceptor, String mensaje) {
