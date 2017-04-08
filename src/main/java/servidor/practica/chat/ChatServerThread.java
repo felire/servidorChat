@@ -32,17 +32,19 @@ public class ChatServerThread extends Thread
 			System.out.println(id);
 			Usuario usuario = new Usuario(socket, id);
 			server.addUsuario(usuario);
-			while (true)
+			while(true)
 			{
 				id = streamIn.readUTF(); //A quien le quiero hablar, el id ahora no es mas el del user dueño del Socket, es de la persona a la que le hablamos
 				mensaje = streamIn.readUTF(); //Mensaje que mando
 				System.out.println(mensaje);
 				server.enviarMensaje(idUsuario,id, mensaje);
 			}
-		}
-		catch(IOException ioe) 
-		{
-			System.out.println("Error : " + ioe);
+		}catch(IOException ioe) {
+			try{
+				this.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -54,13 +56,8 @@ public class ChatServerThread extends Thread
 	
 	public void close() throws IOException
 	{
-		if (socket != null)
-		{
-			socket.close();
-		}
-		if (streamIn != null)
-		{
-			streamIn.close();
-		}
+		if(server != null) server.seDesconectoUsuario(socket);
+		if (socket != null) socket.close();
+		if (streamIn != null) streamIn.close();
 	}
 }

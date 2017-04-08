@@ -16,7 +16,8 @@ public class Servidor implements Runnable
 	private List<ChatServerThread> chats;
 	private Pendientes mensajesPendientes;
 	private Thread threadPendientes;
-	Semaphore semaforo;
+	private Semaphore semaforo;
+	
 	public Servidor(int puerto)
 	{
 		usuariosConectados = new ArrayList<Usuario>();
@@ -69,12 +70,26 @@ public class Servidor implements Runnable
 	    }
 	}
 	
+	public void seDesconectoUsuario(Socket socket)
+	{
+		Usuario usr = this.getUsuario(socket);
+		if(usr != null) 
+		{
+			try {
+				semaforo.acquire();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			usuariosConectados.remove(usr);
+			semaforo.release();
+		}
+	}
+
 	public void addUsuario(Usuario usuario)
 	{
 		try {
 			semaforo.acquire();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		this.usuariosConectados.add(usuario);
@@ -86,10 +101,26 @@ public class Servidor implements Runnable
 		try {
 			semaforo.acquire();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		List<Usuario> lista =this.usuariosConectados.stream().filter(u->u.soyUsuario(id)).collect(Collectors.toList());
+		semaforo.release();
+		 		if(lista.size() == 0){
+		 			return null;
+		 		}
+		 		else{
+		 			return lista.get(0);
+		 		}
+	}
+	
+	public Usuario getUsuario(Socket socket)
+	{
+		try {
+			semaforo.acquire();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		List<Usuario> lista =this.usuariosConectados.stream().filter(u->u.soyUsuario(socket)).collect(Collectors.toList());
 		semaforo.release();
 		 		if(lista.size() == 0){
 		 			return null;

@@ -17,7 +17,6 @@ public class Usuario
 		try {
 			this.streamOut = new DataOutputStream(socket.getOutputStream());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -26,13 +25,18 @@ public class Usuario
 	{
 		return id.equals(id_);
 	}
+	
+	public Boolean soyUsuario(Socket socket_)
+	{
+		return socket.equals(socket_);
+	}
+	
 	public void recibirMensaje(String emisor, String mensaje){
 		try {
 			streamOut.writeUTF(emisor);	 
 			streamOut.writeUTF(mensaje);
 		}
 		catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
