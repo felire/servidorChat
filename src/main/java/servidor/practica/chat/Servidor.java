@@ -41,7 +41,7 @@ public class Servidor implements Runnable
 	{
 		usuariosConectados = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
-		mensajesPendientes = new Pendientes(this);
+		mensajesPendientes = new Pendientes();
 		threadPendientes = new Thread(mensajesPendientes);
 		semaforo = new Semaphore(1);
 		threadPendientes.start();
