@@ -4,18 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
-public class Pendientes implements Runnable{
+public class Pendientes implements Runnable
+{
 	
-	List<Mensaje> mensajes;
-	List <Mensaje> mensajesClonados; //Para borrar despues del ForEach
-	Semaphore semaphore;
+	private List<Mensaje> mensajes;
+	private Semaphore semaphore;
 
-	public Pendientes(){
+	public Pendientes()
+	{
 		mensajes = new ArrayList<Mensaje>();
 		semaphore = new Semaphore(1);
 	}
 	
-	public void addMensaje(Mensaje mensaje){
+	public void addMensaje(Mensaje mensaje)
+	{
 		try {
 			semaphore.acquire();
 		} catch (InterruptedException e) {
@@ -25,25 +27,26 @@ public class Pendientes implements Runnable{
 		semaphore.release();
 	}
 	
-	public void sacarPendiente(Mensaje mensaje){
+	public void sacarPendiente(Mensaje mensaje)
+	{
 		mensajes.remove(mensaje);
 	}
 	
 	@Override
-	public void run() {
-		while(true){
-			mensajesClonados = new ArrayList<Mensaje>();
+	public void run()
+	{
+		List <Mensaje> mensajesClonados = new ArrayList<Mensaje>();
+		while(true)
+		{
+			mensajesClonados.clear();
 			try {
 				semaphore.acquire();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			mensajes.forEach(m -> mensajesClonados.add(m));
+			mensajesClonados.addAll(mensajes);
 			semaphore.release();
 			mensajesClonados.forEach(m-> m.intentarEnviar(this));
 		}
-		
-	}
-	
-	
+	}	
 }

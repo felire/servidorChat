@@ -10,7 +10,7 @@ import java.util.concurrent.Semaphore;
 
 public class Servidor implements Runnable
 {
-	public List<Usuario> usuariosConectados;
+	private List<Usuario> usuariosConectados;
 	private static Servidor obj = null;
 	private ServerSocket socketS;
 	private Thread thread;
