@@ -26,10 +26,6 @@ public class Usuario
 		return id.equals(id_);
 	}
 	
-	public Boolean soyUsuario(Socket socket_)
-	{
-		return socket.equals(socket_);
-	}
 	
 	public void recibirMensaje(String emisor, String mensaje){
 		try {

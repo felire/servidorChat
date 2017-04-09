@@ -19,7 +19,6 @@ public class Pendientes implements Runnable{
 		try {
 			semaphore.acquire();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		mensajes.add(mensaje);
@@ -37,7 +36,6 @@ public class Pendientes implements Runnable{
 			try {
 				semaphore.acquire();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			mensajes.forEach(m -> mensajesClonados.add(m));
