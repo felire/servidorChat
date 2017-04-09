@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 
 public class Pendientes implements Runnable{
+	
 	List<Mensaje> mensajes;
 	List <Mensaje> mensajesClonados; //Para borrar despues del ForEach
 	Semaphore semaphore;
-	Servidor server;
-	public Pendientes(Servidor server_){
-		server = server_;
+
+	public Pendientes(){
 		mensajes = new ArrayList<Mensaje>();
 		semaphore = new Semaphore(1);
 	}
@@ -25,9 +25,11 @@ public class Pendientes implements Runnable{
 		mensajes.add(mensaje);
 		semaphore.release();
 	}
+	
 	public void sacarPendiente(Mensaje mensaje){
 		mensajes.remove(mensaje);
 	}
+	
 	@Override
 	public void run() {
 		while(true){
@@ -40,7 +42,7 @@ public class Pendientes implements Runnable{
 			}
 			mensajes.forEach(m -> mensajesClonados.add(m));
 			semaphore.release();
-			mensajesClonados.forEach(m-> m.intentarEnviar(this, server));
+			mensajesClonados.forEach(m-> m.intentarEnviar(this));
 		}
 		
 	}

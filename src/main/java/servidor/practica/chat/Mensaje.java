@@ -11,14 +11,12 @@ public class Mensaje {
 		this.mensaje = mensaje;
 	}
 	
-	public void intentarEnviar(Pendientes pendientes, Servidor server){
-		Usuario usuarioReceptor = server.getUsuario(receptor);
-		if(usuarioReceptor == null){
-			
-		}else{
+	public void intentarEnviar(Pendientes pendientes){
+		Servidor.obj().getUsuario(receptor).ifPresent(usuarioReceptor -> 
+		{
 			System.out.println("Encontrado!!!!!");
 			usuarioReceptor.recibirMensaje(emisor, mensaje);
 			pendientes.sacarPendiente(this);
-		}
+		});
 	}
 }

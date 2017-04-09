@@ -5,8 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Semaphore;
-import java.util.stream.Collectors;
 
 public class Servidor implements Runnable
 {
@@ -41,7 +41,7 @@ public class Servidor implements Runnable
 	{
 		usuariosConectados = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
-		mensajesPendientes = new Pendientes(this);
+		mensajesPendientes = new Pendientes();
 		threadPendientes = new Thread(mensajesPendientes);
 		semaforo = new Semaphore(1);
 		threadPendientes.start();
@@ -91,8 +91,7 @@ public class Servidor implements Runnable
 	
 	public void seDesconectoUsuario(String id)
 	{
-		Usuario usr = this.getUsuario(id);
-		if(usr != null) 
+		this.getUsuario(id).ifPresent(usr ->
 		{
 			try {
 				semaforo.acquire();
@@ -101,7 +100,7 @@ public class Servidor implements Runnable
 			}
 			usuariosConectados.remove(usr);
 			semaforo.release();
-		}
+		});
 	}
 
 	public void addUsuario(Usuario usuario)
@@ -115,21 +114,16 @@ public class Servidor implements Runnable
 		semaforo.release();
 	}
 	
-	public Usuario getUsuario(String id)
+	public Optional<Usuario> getUsuario(String id)
 	{
 		try {
 			semaforo.acquire();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		List<Usuario> lista = usuariosConectados.stream().filter(u->u.soyUsuario(id)).collect(Collectors.toList());
+		Optional<Usuario> usr = usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
 		semaforo.release();
-		 		if(lista.size() == 0){
-		 			return null;
-		 		}
-		 		else{
-		 			return lista.get(0);
-		 		}
+		return usr;
 	}
 	
 	public void start()
@@ -156,15 +150,12 @@ public class Servidor implements Runnable
 	}
 
 	public void enviarMensaje(String idEmisor,String idReceptor, String mensaje) {
-		Usuario receptor= this.getUsuario(idReceptor);
-		if(receptor == null){
-			System.out.println("Tendriamos que entrar aca...");
+		Optional<Usuario> opUsuario = this.getUsuario(idReceptor);
+		opUsuario.ifPresent(usr -> usr.recibirMensaje(idEmisor, mensaje));
+		if(!opUsuario.isPresent())
+		{
 			Mensaje mensajeP = new Mensaje(idEmisor,idReceptor,mensaje);
 			mensajesPendientes.addMensaje(mensajeP);
-		}
-		else{
-			System.out.println("no aca..");
-			receptor.recibirMensaje(idEmisor, mensaje);
 		}
 	}
 }
