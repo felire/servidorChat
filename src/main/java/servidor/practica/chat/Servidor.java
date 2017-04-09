@@ -23,18 +23,22 @@ public class Servidor implements Runnable
 	{
 		if(obj == null)
 		{
-			obj = new Servidor(2023);
+			obj = new Servidor(2023);//el puerto por defecto es 2023
 		}
 		return obj;
 	}
 	
-	public static Servidor obj(int puerto)
+	public void setPort(int puerto)
 	{
-		if(obj == null)
+		try 
 		{
-			obj = new Servidor(puerto);
+			socketS.close();
+			socketS = new ServerSocket(puerto);
 		}
-		return obj;
+		catch (IOException e) 
+		{
+			System.out.println("Error " + e);
+		}
 	}
 	
 	public Servidor(int puerto)
@@ -91,16 +95,13 @@ public class Servidor implements Runnable
 	
 	public void seDesconectoUsuario(String id)
 	{
-		this.getUsuario(id).ifPresent(usr ->
-		{
-			try {
-				semaforo.acquire();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			usuariosConectados.remove(usr);
-			semaforo.release();
-		});
+		try {
+			semaforo.acquire();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		usuariosConectados.removeIf( usr -> usr.soyUsuario(id));
+		semaforo.release();
 	}
 
 	public void addUsuario(Usuario usuario)
@@ -110,7 +111,7 @@ public class Servidor implements Runnable
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		this.usuariosConectados.add(usuario);
+		usuariosConectados.add(usuario);
 		semaforo.release();
 	}
 	
@@ -146,10 +147,11 @@ public class Servidor implements Runnable
 	
 	public static void main(String args[])
 	{
-		Servidor.obj(2023).start();
+		Servidor.obj().start();
 	}
 
-	public void enviarMensaje(String idEmisor,String idReceptor, String mensaje) {
+	public void enviarMensaje(String idEmisor,String idReceptor, String mensaje) 
+	{
 		Optional<Usuario> opUsuario = this.getUsuario(idReceptor);
 		opUsuario.ifPresent(usr -> usr.recibirMensaje(idEmisor, mensaje));
 		if(!opUsuario.isPresent())
