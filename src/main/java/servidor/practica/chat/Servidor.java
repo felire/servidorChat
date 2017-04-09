@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
 
 public class Servidor implements Runnable
 {
@@ -16,7 +15,6 @@ public class Servidor implements Runnable
 	private Thread thread;
 	private List<ChatServerThread> chats;
 	private List<Mensaje> mensajesPendientes;
-	private Semaphore semaforo;
 	
 	public static Servidor obj()
 	{
@@ -45,7 +43,6 @@ public class Servidor implements Runnable
 		usuariosConectados = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
 		mensajesPendientes = new ArrayList<Mensaje>();
-		semaforo = new Semaphore(1);
 		try 
 		{
 			socketS = new ServerSocket(puerto);
@@ -92,29 +89,17 @@ public class Servidor implements Runnable
 	
 	public void seDesconectoUsuario(String id)
 	{
-		try {
-			semaforo.acquire();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 		usuariosConectados.removeIf( usr -> usr.soyUsuario(id));
-		semaforo.release();
 	}
 
-	public void addUsuario(Usuario usuario)
+	public void addUsuario(Usuario usuario)//se encarga de entregar mensajes pendientes
 	{
-		try {
-			semaforo.acquire();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 		usuariosConectados.add(usuario);
-		semaforo.release();
 		mensajesPendientes.removeIf(msj -> 
 		{
 			if(msj.receptor.equals(usuario.id))
 			{
-				usuario.recibirMensaje(msj.emisor, msj.mensaje);
+				usuario.recibir(msj);
 				return true;
 			}
 			return false;
@@ -123,14 +108,7 @@ public class Servidor implements Runnable
 	
 	public Optional<Usuario> getUsuario(String id)
 	{
-		try {
-			semaforo.acquire();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		Optional<Usuario> usr = usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
-		semaforo.release();
-		return usr;
+		return usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
 	}
 	
 	public void start()
@@ -156,14 +134,13 @@ public class Servidor implements Runnable
 		Servidor.obj().start();
 	}
 
-	public void enviarMensaje(String idEmisor,String idReceptor, String mensaje) 
+	public void enviarMensaje(Mensaje mensaje) 
 	{
-		Optional<Usuario> opUsuario = this.getUsuario(idReceptor);
-		opUsuario.ifPresent(usr -> usr.recibirMensaje(idEmisor, mensaje));
+		Optional<Usuario> opUsuario = this.getUsuario(mensaje.receptor);
+		opUsuario.ifPresent(usr -> usr.recibir(mensaje));
 		if(!opUsuario.isPresent())
 		{
-			Mensaje mensajeP = new Mensaje(idEmisor,idReceptor,mensaje);
-			mensajesPendientes.add(mensajeP);
+			mensajesPendientes.add(mensaje);
 		}
 	}
 }

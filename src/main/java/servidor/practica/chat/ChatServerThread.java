@@ -35,7 +35,8 @@ public class ChatServerThread extends Thread
 				id = streamIn.readUTF(); //A quien le quiero hablar, el id ahora no es mas el del user dueño del Socket, es de la persona a la que le hablamos
 				mensaje = streamIn.readUTF(); //Mensaje que mando
 				System.out.println(mensaje);
-				Servidor.obj().enviarMensaje(idUsuario,id, mensaje);
+				Mensaje msj = new Mensaje(idUsuario,id, mensaje);
+				Servidor.obj().enviarMensaje(msj);
 			}
 		}catch(IOException ioe) {
 			try{

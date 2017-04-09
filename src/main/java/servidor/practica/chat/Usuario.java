@@ -26,11 +26,11 @@ public class Usuario
 		return id.equals(id_);
 	}
 	
-	public void recibirMensaje(String emisor, String mensaje)
+	public void recibir(Mensaje mensaje)
 	{
 		try {
-			streamOut.writeUTF(emisor);	 
-			streamOut.writeUTF(mensaje);
+			streamOut.writeUTF(mensaje.emisor);	 
+			streamOut.writeUTF(mensaje.mensaje);
 		}
 		catch (IOException e) {
 			e.printStackTrace();
