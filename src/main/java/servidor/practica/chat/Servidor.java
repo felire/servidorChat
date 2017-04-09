@@ -15,8 +15,7 @@ public class Servidor implements Runnable
 	private ServerSocket socketS;
 	private Thread thread;
 	private List<ChatServerThread> chats;
-	private Pendientes mensajesPendientes;
-	private Thread threadPendientes;
+	private List<Mensaje> mensajesPendientes;
 	private Semaphore semaforo;
 	
 	public static Servidor obj()
@@ -45,10 +44,8 @@ public class Servidor implements Runnable
 	{
 		usuariosConectados = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
-		mensajesPendientes = new Pendientes();
-		threadPendientes = new Thread(mensajesPendientes);
+		mensajesPendientes = new ArrayList<Mensaje>();
 		semaforo = new Semaphore(1);
-		threadPendientes.start();
 		try 
 		{
 			socketS = new ServerSocket(puerto);
@@ -113,6 +110,15 @@ public class Servidor implements Runnable
 		}
 		usuariosConectados.add(usuario);
 		semaforo.release();
+		mensajesPendientes.removeIf(msj -> 
+		{
+			if(msj.receptor.equals(usuario.id))
+			{
+				usuario.recibirMensaje(msj.emisor, msj.mensaje);
+				return true;
+			}
+			return false;
+		});
 	}
 	
 	public Optional<Usuario> getUsuario(String id)
@@ -157,7 +163,7 @@ public class Servidor implements Runnable
 		if(!opUsuario.isPresent())
 		{
 			Mensaje mensajeP = new Mensaje(idEmisor,idReceptor,mensaje);
-			mensajesPendientes.addMensaje(mensajeP);
+			mensajesPendientes.add(mensajeP);
 		}
 	}
 }
