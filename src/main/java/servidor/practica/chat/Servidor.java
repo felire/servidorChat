@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 
 public class Servidor implements Runnable
 {
@@ -15,8 +16,9 @@ public class Servidor implements Runnable
 	private Thread thread;
 	private List<ChatServerThread> chats;
 	private List<Mensaje> mensajesPendientes;
+	private Semaphore semaforo;
 	
-	public static Servidor obj()
+	public static Servidor obj() 
 	{
 		if(obj == null)
 		{
@@ -58,7 +60,7 @@ public class Servidor implements Runnable
 	public void run()
 	{
 		while (thread != null)
-		{  
+		{
 			try
 	        {  
 				System.out.println("Waiting for a client ..."); 
@@ -77,7 +79,7 @@ public class Servidor implements Runnable
 		ChatServerThread peticionCliente = new ChatServerThread(socket);
 		chats.add(peticionCliente);
 	    try
-	    {  
+	    {
 	    	peticionCliente.open();
 	    	peticionCliente.start();
 	    }
@@ -89,12 +91,24 @@ public class Servidor implements Runnable
 	
 	public void seDesconectoUsuario(String id)
 	{
+		try {
+			semaforo.acquire();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		usuariosConectados.removeIf( usr -> usr.soyUsuario(id));
+		semaforo.release();
 	}
 
 	public void addUsuario(Usuario usuario)//se encarga de entregar mensajes pendientes
 	{
+		try {
+			semaforo.acquire();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		usuariosConectados.add(usuario);
+		semaforo.release();
 		mensajesPendientes.removeIf(msj -> 
 		{
 			if(msj.receptor.equals(usuario.id))
@@ -108,7 +122,14 @@ public class Servidor implements Runnable
 	
 	public Optional<Usuario> getUsuario(String id)
 	{
-		return usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
+		try {
+			semaforo.acquire();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		Optional<Usuario> usr = usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
+		semaforo.release();
+		return usr;
 	}
 	
 	public void start()
