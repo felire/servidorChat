@@ -21,6 +21,16 @@ public class Usuario
 		}
 	}
 	
+	public Usuario(Socket socket)
+	{
+		this.socket = socket;
+		try {
+			this.streamOut = new DataOutputStream(socket.getOutputStream());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public Boolean soyUsuario(String id_)
 	{
 		return id.equals(id_);

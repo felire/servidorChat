@@ -7,35 +7,30 @@ import java.net.Socket;
 
 public class ChatServerThread extends Thread
 {
-	private Socket socket = null;
-	private int ID = -1;
 	private DataInputStream streamIn =  null;
 	private DataOutputStream streamOut = null;
-	private String idUsuario;
+	private Usuario usuario = null;
 	
-	public ChatServerThread(Socket _socket)
+	public ChatServerThread(Socket socket)
 	{
-		socket = _socket;
-		ID = socket.getPort();
+		this.usuario = new Usuario(socket);
 	}
 
 	public void run()
 	{
-		System.out.println("Server Thread " + ID + " running.");
+		System.out.println("Server Thread " + usuario.socket.getPort() + " running.");
 		try
 		{
-			String id = streamIn.readUTF();
-			this.idUsuario = id;
-			String mensaje;
-			System.out.println(id);
-			Usuario usuario = new Usuario(socket, id);
-			Servidor.obj().addUsuario(usuario);
+			usuario.id = streamIn.readUTF();
+			System.out.println(usuario.id);
+			Servidor.obj().seConectoUsuario(usuario);
+			String id, mensaje;
 			while(true)
 			{
-				id = streamIn.readUTF(); //A quien le quiero hablar, el id ahora no es mas el del user dueño del Socket, es de la persona a la que le hablamos
+				id = streamIn.readUTF(); //id de la persona con la que hablamos
 				mensaje = streamIn.readUTF(); //Mensaje que mando
 				System.out.println(mensaje);
-				Mensaje msj = new Mensaje(idUsuario,id, mensaje);
+				Mensaje msj = new Mensaje(usuario.id, id, mensaje);
 				Servidor.obj().enviarMensaje(msj);
 			}
 		}catch(IOException ioe) {
@@ -49,14 +44,14 @@ public class ChatServerThread extends Thread
 	
 	public void open() throws IOException
 	{
-		streamIn = new DataInputStream(socket.getInputStream());
-		streamOut = new DataOutputStream(socket.getOutputStream());
+		streamIn = new DataInputStream(usuario.socket.getInputStream());
+		streamOut = new DataOutputStream(usuario.socket.getOutputStream());
 	}
 	
 	public void close() throws IOException
 	{
-		if(idUsuario != null) Servidor.obj().seDesconectoUsuario(idUsuario);
-		if (socket != null) socket.close();
+		usuario.socket.close();		
+		if(usuario != null) Servidor.obj().seDesconectoUsuario(usuario);
 		if (streamIn != null) streamIn.close();
 	}
 }

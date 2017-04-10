@@ -65,7 +65,7 @@ public class Servidor implements Runnable
 			try
 	        {  
 				System.out.println("Waiting for a client ..."); 
-	            addThread(socketS.accept());
+	            this.addThread(socketS.accept());
 	        }
 	        catch(IOException ie)
 	        {  
@@ -74,7 +74,7 @@ public class Servidor implements Runnable
 	    }
 	}
 	
-	public void addThread(Socket socket)
+	private void addThread(Socket socket)
 	{
 		System.out.println("Client accepted: " + socket);
 		ChatServerThread peticionCliente = new ChatServerThread(socket);
@@ -90,18 +90,18 @@ public class Servidor implements Runnable
 	    }
 	}
 	
-	public void seDesconectoUsuario(String id)
+	public void seDesconectoUsuario(Usuario usuario)
 	{
 		try {
 			semaforo.acquire();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		usuariosConectados.removeIf( usr -> usr.soyUsuario(id));
+		usuariosConectados.remove(usuario);
 		semaforo.release();
 	}
 
-	public void addUsuario(Usuario usuario)//se encarga de entregar mensajes pendientes
+	public void seConectoUsuario(Usuario usuario)//se encarga de entregar mensajes pendientes
 	{
 		try {
 			semaforo.acquire();
@@ -149,6 +149,14 @@ public class Servidor implements Runnable
 			thread.interrupt();
 	        thread = null;
 	    }
+		chats.forEach(chat -> 
+		{
+			try {
+				chat.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
 	}
 	
 	public static void main(String args[])
