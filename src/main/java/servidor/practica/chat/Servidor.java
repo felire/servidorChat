@@ -45,6 +45,7 @@ public class Servidor implements Runnable
 		usuariosConectados = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
 		mensajesPendientes = new ArrayList<Mensaje>();
+		semaforo = new Semaphore(1);
 		try 
 		{
 			socketS = new ServerSocket(puerto);
