@@ -18,6 +18,25 @@ public class Servidor implements Runnable
 	private List<Mensaje> mensajesPendientes;
 	private Semaphore semaforo;
 	
+	public Servidor(int puerto)
+	{
+		usuariosConectados = new ArrayList<Usuario>();
+		chats = new ArrayList<ChatServerThread>();
+		mensajesPendientes = new ArrayList<Mensaje>();
+		semaforo = new Semaphore(1);
+		thread = null;
+		try 
+		{
+			socketS = new ServerSocket(puerto);
+			System.out.println("Arranca server..");
+			this.start();
+		}
+		catch (IOException e) 
+		{
+			System.out.println("Error al crear serverSocket" + e);
+		}
+	}
+	
 	public static Servidor obj() 
 	{
 		if(obj == null)
@@ -39,26 +58,7 @@ public class Servidor implements Runnable
 			System.out.println("Error " + e);
 		}
 	}
-	
-	public Servidor(int puerto)
-	{
-		usuariosConectados = new ArrayList<Usuario>();
-		chats = new ArrayList<ChatServerThread>();
-		mensajesPendientes = new ArrayList<Mensaje>();
-		semaforo = new Semaphore(1);
-		thread = null;
-		try 
-		{
-			socketS = new ServerSocket(puerto);
-			System.out.println("Arranca server..");
-			this.start();
-		}
-		catch (IOException e) 
-		{
-			System.out.println("Error al crear serverSocket" + e);
-		}
-	}
-	
+		
 	public void run()
 	{
 		while (thread != null)
@@ -166,11 +166,6 @@ public class Servidor implements Runnable
 		});
 	}
 	
-	public static void main(String args[])
-	{
-		Servidor.obj().start();
-	}
-
 	public void enviarMensaje(Mensaje mensaje) 
 	{
 		Optional<Usuario> opUsuario = this.getUsuario(mensaje.receptor);
@@ -180,4 +175,10 @@ public class Servidor implements Runnable
 			mensajesPendientes.add(mensaje);
 		}
 	}
+	
+	public static void main(String args[])
+	{
+		Servidor.obj().start();
+	}
+
 }
