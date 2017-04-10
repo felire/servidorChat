@@ -9,7 +9,7 @@ public class ChatServerThread extends Thread
 {
 	private DataInputStream streamIn =  null;
 	private DataOutputStream streamOut = null;
-	private Usuario usuario = null;
+	private Usuario usuario;
 	
 	public ChatServerThread(Socket socket)
 	{
