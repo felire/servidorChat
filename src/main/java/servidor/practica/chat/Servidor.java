@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
 
 public class Servidor implements Runnable
 {
@@ -16,14 +15,12 @@ public class Servidor implements Runnable
 	private Thread thread;
 	private List<ChatServerThread> chats;
 	private List<Mensaje> mensajesPendientes;
-	private Semaphore semaforo;
 	
 	public Servidor(int puerto)
 	{
 		usuariosConectados = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
 		mensajesPendientes = new ArrayList<Mensaje>();
-		semaforo = new Semaphore(1);
 		thread = null;
 		try 
 		{
@@ -97,26 +94,14 @@ public class Servidor implements Runnable
 	    }
 	}
 	
-	public void seDesconectoUsuario(Usuario usuario)
+	public synchronized void seDesconectoUsuario(Usuario usuario)
 	{
-		try {
-			semaforo.acquire();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 		usuariosConectados.remove(usuario);
-		semaforo.release();
 	}
 
-	public void seConectoUsuario(Usuario usuario)//se encarga de entregar mensajes pendientes
+	public synchronized void seConectoUsuario(Usuario usuario)//se encarga de entregar mensajes pendientes
 	{
-		try {
-			semaforo.acquire();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 		usuariosConectados.add(usuario);
-		semaforo.release();
 		mensajesPendientes.removeIf(msj -> 
 		{
 			if(msj.receptor.equals(usuario.id))
@@ -128,16 +113,9 @@ public class Servidor implements Runnable
 		});
 	}
 	
-	public Optional<Usuario> getUsuario(String id)
+	public synchronized Optional<Usuario> getUsuario(String id)
 	{
-		try {
-			semaforo.acquire();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		Optional<Usuario> usr = usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
-		semaforo.release();
-		return usr;
+		return usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
 	}
 	
 	public void start()
