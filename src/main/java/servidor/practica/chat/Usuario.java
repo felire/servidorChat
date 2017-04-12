@@ -8,6 +8,7 @@ public class Usuario
 {
 	public String id;
 	public Socket socket;
+	public String ip;
 	private DataOutputStream streamOut; //el streamIn lo maneja cada hilo
 	
 	public Usuario(Socket socket, String id)
