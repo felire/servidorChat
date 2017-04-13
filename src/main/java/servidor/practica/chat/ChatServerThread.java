@@ -25,7 +25,6 @@ public class ChatServerThread extends Thread
 			usuario.id = streamIn.readUTF();
 			System.out.println(usuario.id);
 			Servidor.obj().seConectoUsuario(usuario);
-			Optional<Usuario> compañero = Optional.empty();
 			TipoMensaje tipo = null;
 			Boolean pendientesPermitidos = false;
 			String idPendiente = null;
@@ -42,7 +41,7 @@ public class ChatServerThread extends Thread
 						String idCompañero = streamIn.readUTF();
 						usuario.puerto = streamIn.readUTF();
 						
-						compañero = Servidor.obj().getUsuario(idCompañero);
+						Optional<Usuario> compañero = Servidor.obj().getUsuario(idCompañero);
 						compañero.ifPresent(llamado ->
 						{
 							Servidor.obj().establecerConexion(usuario, llamado);
