@@ -58,11 +58,11 @@ public class Servidor implements Runnable
 		
 	public void run()
 	{
+		System.out.println("Waiting for clients ..."); 
 		while (thread != null)
 		{
 			try
 	        {  
-				System.out.println("Waiting for a client ..."); 
 	            this.addThread(socketS.accept());
 	        }
 	        catch(IOException ie)
