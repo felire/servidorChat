@@ -5,66 +5,65 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Semaphore;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class Servidor implements Runnable
 {
-	public List<Usuario> usuariosConectados;
+	private List<Usuario> usuariosConectados;
 	private static Servidor obj = null;
 	private ServerSocket socketS;
 	private Thread thread;
 	private List<ChatServerThread> chats;
-	private Pendientes mensajesPendientes;
-	private Thread threadPendientes;
-	private Semaphore semaforo;
-	
-	public static Servidor obj()
-	{
-		if(obj == null)
-		{
-			obj = new Servidor(2023);
-		}
-		return obj;
-	}
-	
-	public static Servidor obj(int puerto)
-	{
-		if(obj == null)
-		{
-			obj = new Servidor(puerto);
-		}
-		return obj;
-	}
+	private List<Mensaje> mensajesPendientes;
 	
 	public Servidor(int puerto)
 	{
 		usuariosConectados = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
-		mensajesPendientes = new Pendientes();
-		threadPendientes = new Thread(mensajesPendientes);
-		semaforo = new Semaphore(1);
-		threadPendientes.start();
+		mensajesPendientes = new ArrayList<Mensaje>();
+		thread = null;
 		try 
 		{
+			socketS = new ServerSocket(puerto);
+			System.out.println("Arranca server..");
+			this.start();
+		}
+		catch (IOException e) 
+		{
+			System.out.println("Error al crear serverSocket" + e);
+		}
+	}
+	
+	public static Servidor obj() 
+	{
+		if(obj == null)
+		{
+			obj = new Servidor(2023);//el puerto por defecto es 2023
+		}
+		return obj;
+	}
+	
+	public void setPort(int puerto)
+	{
+		try 
+		{
+			socketS.close();
 			socketS = new ServerSocket(puerto);
 		}
 		catch (IOException e) 
 		{
 			System.out.println("Error " + e);
 		}
-		System.out.println("Arranca server..");
-		this.start();
 	}
-	
+		
 	public void run()
 	{
 		while (thread != null)
-		{  
+		{
 			try
 	        {  
 				System.out.println("Waiting for a client ..."); 
-	            addThread(socketS.accept());
+	            this.addThread(socketS.accept());
 	        }
 	        catch(IOException ie)
 	        {  
@@ -73,63 +72,50 @@ public class Servidor implements Runnable
 	    }
 	}
 	
-	public void addThread(Socket socket)
+	private void addThread(Socket socket)
 	{
 		System.out.println("Client accepted: " + socket);
 		ChatServerThread peticionCliente = new ChatServerThread(socket);
 		chats.add(peticionCliente);
 	    try
-	    {  
+	    {
 	    	peticionCliente.open();
 	    	peticionCliente.start();
 	    }
 	    catch(IOException ioe)
 	    {
-	    	System.out.println("Error opening thread: " + ioe); 
+	    	System.out.println("Error opening thread: " + ioe);
+	    	chats.remove(peticionCliente);
+	    	try {
+				peticionCliente.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 	    }
 	}
 	
-	public void seDesconectoUsuario(String id)
+	public synchronized void seDesconectoUsuario(Usuario usuario)
 	{
-		Usuario usr = this.getUsuario(id);
-		if(usr != null) 
-		{
-			try {
-				semaforo.acquire();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			usuariosConectados.remove(usr);
-			semaforo.release();
-		}
+		usuariosConectados.remove(usuario);
 	}
 
-	public void addUsuario(Usuario usuario)
+	public synchronized void seConectoUsuario(Usuario usuario)//se encarga de entregar mensajes pendientes
 	{
-		try {
-			semaforo.acquire();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		this.usuariosConectados.add(usuario);
-		semaforo.release();
+		usuariosConectados.add(usuario);
+		mensajesPendientes.removeIf(msj -> 
+		{
+			if(msj.receptor.equals(usuario.id))
+			{
+				usuario.recibir(msj);
+				return true;
+			}
+			return false;
+		});
 	}
 	
-	public Usuario getUsuario(String id)
+	public synchronized Optional<Usuario> getUsuario(String id)
 	{
-		try {
-			semaforo.acquire();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		List<Usuario> lista = usuariosConectados.stream().filter(u->u.soyUsuario(id)).collect(Collectors.toList());
-		semaforo.release();
-		 		if(lista.size() == 0){
-		 			return null;
-		 		}
-		 		else{
-		 			return lista.get(0);
-		 		}
+		return usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
 	}
 	
 	public void start()
@@ -148,23 +134,29 @@ public class Servidor implements Runnable
 			thread.interrupt();
 	        thread = null;
 	    }
+		chats.forEach(chat -> 
+		{
+			try {
+				chat.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
+	}
+	
+	public void enviarMensaje(Mensaje mensaje) 
+	{
+		Optional<Usuario> opUsuario = this.getUsuario(mensaje.receptor);
+		opUsuario.ifPresent(usr -> usr.recibir(mensaje));
+		if(!opUsuario.isPresent())
+		{
+			mensajesPendientes.add(mensaje);
+		}
 	}
 	
 	public static void main(String args[])
 	{
-		Servidor.obj(2023).start();
+		Servidor.obj().start();
 	}
 
-	public void enviarMensaje(String idEmisor,String idReceptor, String mensaje) {
-		Usuario receptor= this.getUsuario(idReceptor);
-		if(receptor == null){
-			System.out.println("Tendriamos que entrar aca...");
-			Mensaje mensajeP = new Mensaje(idEmisor,idReceptor,mensaje);
-			mensajesPendientes.addMensaje(mensajeP);
-		}
-		else{
-			System.out.println("no aca..");
-			receptor.recibirMensaje(idEmisor, mensaje);
-		}
-	}
 }

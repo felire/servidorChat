@@ -8,7 +8,7 @@ public class Usuario
 {
 	public String id;
 	public Socket socket;
-	private DataOutputStream streamOut; //Con el output basta, el streamIn lo maneja cada hilo
+	private DataOutputStream streamOut; //el streamIn lo maneja cada hilo
 	
 	public Usuario(Socket socket, String id)
 	{
@@ -21,16 +21,26 @@ public class Usuario
 		}
 	}
 	
+	public Usuario(Socket socket)
+	{
+		this.socket = socket;
+		try {
+			this.streamOut = new DataOutputStream(socket.getOutputStream());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public Boolean soyUsuario(String id_)
 	{
 		return id.equals(id_);
 	}
 	
-	
-	public void recibirMensaje(String emisor, String mensaje){
+	public void recibir(Mensaje mensaje)
+	{
 		try {
-			streamOut.writeUTF(emisor);	 
-			streamOut.writeUTF(mensaje);
+			streamOut.writeUTF(mensaje.emisor);	 
+			streamOut.writeUTF(mensaje.mensaje);
 		}
 		catch (IOException e) {
 			e.printStackTrace();
