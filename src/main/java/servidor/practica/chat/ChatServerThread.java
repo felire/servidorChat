@@ -25,22 +25,22 @@ public class ChatServerThread extends Thread
 			usuario.id = streamIn.readUTF();
 			System.out.println(usuario.id);
 			Servidor.obj().seConectoUsuario(usuario);
-			Optional<Usuario> compañero;
-			String tipoMensaje = null;
-			String ip, puerto, id;
-			while(tipoMensaje != "1")
+			Optional<Usuario> compañero = Optional.empty();
+			TipoMensaje tipo = null;
+			Boolean pendientesPermitidos = false;
+			String idPendiente = null;
+			while(tipo != TipoMensaje.MEDESCONECTO)
 			{
-				tipoMensaje = streamIn.readUTF();
-				switch(tipoMensaje)
+				tipo = TipoMensaje.values()[Integer.parseInt(streamIn.readUTF())];
+				switch(tipo)
 				{
-					case "1":
+					case MEDESCONECTO:
 						Servidor.obj().seDesconectoUsuario(usuario);
 						break;
-					case "2":
-						String idCompañero;
-						idCompañero = streamIn.readUTF();
-						ip = streamIn.readUTF();
-						puerto = streamIn.readUTF();
+					case HABLARCON:
+						pendientesPermitidos = false;
+						String idCompañero = streamIn.readUTF();
+						usuario.puerto = streamIn.readUTF();
 						
 						compañero = Servidor.obj().getUsuario(idCompañero);
 						compañero.ifPresent(llamado ->
@@ -49,26 +49,24 @@ public class ChatServerThread extends Thread
 						});
 						if(!compañero.isPresent())
 						{
-							//responder que no esta conectado, dejar mensaje?? while(tipo != 5) ??
-							//usar un tipo mensaje especial aca para dejar claro que dejas
-							//de mandar mensajes pendientes??
-							/* mandaria 5 si queire mandar un msj pendiente, 6 si ya no quiere mandar mas
-							 *tipoMensaje = streamIn.readUTF();
-							 *while(tipoMensaje != "6")
-							 *{
-							 *	mensaje = streamIn.readUTF();
-							 *	Mensaje msj = new Mensaje(usuario.id, idcompañero, mensaje);
-							 *	Servidor.obj().mensajePendiente(msj);
-							 *	tipoMensaje = streamIn.readUTF();
-							 *}
-							 *
-							 */
+							idPendiente = idCompañero;
+							pendientesPermitidos = true;
+							streamOut.writeUTF(TipoMensaje.NOESTADISPONIBLE.toString());
 						}
 						break;
-					case "3"://nos manda sus datos
-						usuario.ip = streamIn.readUTF();
+					case DATOSDECONEXION://nos manda sus datos
+						pendientesPermitidos = false;
 						usuario.puerto = streamIn.readUTF();
 						break;			
+					case MENSAJEPENDIENTE:
+						if(pendientesPermitidos)//si no existe el usuario? se podria chequear con los tokens
+						{
+							String mensajePendiente = streamIn.readUTF();
+							Mensaje mensaje = new Mensaje(usuario.id, idPendiente, mensajePendiente);
+							Servidor.obj().mensajePendiente(mensaje);
+						}
+				default:
+					break;
 				}
 			}
 			this.close();

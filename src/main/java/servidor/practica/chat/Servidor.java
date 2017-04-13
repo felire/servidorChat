@@ -106,7 +106,7 @@ public class Servidor implements Runnable
 		{
 			if(msj.receptor.equals(usuario.id))
 			{
-				//usuario.recibir(msj);
+				usuario.recibirPendiente(msj);
 				return true;
 			}
 			return false;
@@ -144,34 +144,27 @@ public class Servidor implements Runnable
 		});
 	}
 	
-	public void establecerConexion(Usuario llamador, Usuario llamado) //usar enums !!
+	public void establecerConexion(Usuario llamador, Usuario llamado)
 	{
-		llamado.recibir("2");
+		llamado.puerto = null;
+		
+		llamado.recibir(TipoMensaje.PEDIDODECONEXION.toString());
 		llamado.recibir(llamador.id); //quien quiere hablar con el
-		llamado.recibir(llamador.ip); //su ip
+		llamado.recibir(llamador.ip()); //su ip
 		llamado.recibir(llamador.puerto); //su puerto
-		if(llamado.tieneDatosDeConexion()) llamado.recibir("1");
-		else llamado.recibir("0");
 		
 		while(llamado.tieneDatosDeConexion() == false);
 		
-		llamador.recibir("2");
+		llamador.recibir(TipoMensaje.ESTABLECERCONEXION.toString());
 		llamador.recibir(llamado.id);
-		llamador.recibir(llamado.ip); //su ip
-		llamador.recibir(llamado.puerto); //su puerto
+		llamador.recibir(llamado.ip());
+		llamador.recibir(llamado.puerto);
 	}
 	
-	/*
-	public void enviarMensaje(Mensaje mensaje) 
+	public void mensajePendiente(Mensaje mensaje)
 	{
-		Optional<Usuario> opUsuario = this.getUsuario(mensaje.receptor);
-		opUsuario.ifPresent(usr -> usr.recibir(mensaje));
-		if(!opUsuario.isPresent())
-		{
-			mensajesPendientes.add(mensaje);
-		}
+		mensajesPendientes.add(mensaje);
 	}
-	*/
 	
 	public static void main(String args[])
 	{
