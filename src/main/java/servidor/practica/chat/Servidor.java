@@ -106,7 +106,7 @@ public class Servidor implements Runnable
 		{
 			if(msj.receptor.equals(usuario.id))
 			{
-				usuario.recibir(msj);
+				//usuario.recibir(msj);
 				return true;
 			}
 			return false;
@@ -144,6 +144,24 @@ public class Servidor implements Runnable
 		});
 	}
 	
+	public void establecerConexion(Usuario llamador, Usuario llamado) //usar enums !!
+	{
+		llamado.recibir("2");
+		llamado.recibir(llamador.id); //quien quiere hablar con el
+		llamado.recibir(llamador.ip); //su ip
+		llamado.recibir(llamador.puerto); //su puerto
+		if(llamado.tieneDatosDeConexion()) llamado.recibir("1");
+		else llamado.recibir("0");
+		
+		while(llamado.tieneDatosDeConexion() == false);
+		
+		llamador.recibir("2");
+		llamador.recibir(llamado.id);
+		llamador.recibir(llamado.ip); //su ip
+		llamador.recibir(llamado.puerto); //su puerto
+	}
+	
+	/*
 	public void enviarMensaje(Mensaje mensaje) 
 	{
 		Optional<Usuario> opUsuario = this.getUsuario(mensaje.receptor);
@@ -153,6 +171,7 @@ public class Servidor implements Runnable
 			mensajesPendientes.add(mensaje);
 		}
 	}
+	*/
 	
 	public static void main(String args[])
 	{

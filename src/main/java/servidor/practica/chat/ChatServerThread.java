@@ -26,7 +26,8 @@ public class ChatServerThread extends Thread
 			System.out.println(usuario.id);
 			Servidor.obj().seConectoUsuario(usuario);
 			Optional<Usuario> compañero;
-			String tipoMensaje = streamIn.readUTF();
+			String tipoMensaje = null;
+			String ip, puerto, id;
 			while(tipoMensaje != "1")
 			{
 				tipoMensaje = streamIn.readUTF();
@@ -36,15 +37,15 @@ public class ChatServerThread extends Thread
 						Servidor.obj().seDesconectoUsuario(usuario);
 						break;
 					case "2":
-						String idCompañero, ip, puerto;
+						String idCompañero;
 						idCompañero = streamIn.readUTF();
 						ip = streamIn.readUTF();
 						puerto = streamIn.readUTF();
 						
 						compañero = Servidor.obj().getUsuario(idCompañero);
-						compañero.ifPresent(user ->
+						compañero.ifPresent(llamado ->
 						{
-							// pregunar a user su puerto e ip, si quiere hablar con id
+							Servidor.obj().establecerConexion(usuario, llamado);
 						});
 						if(!compañero.isPresent())
 						{
@@ -64,10 +65,10 @@ public class ChatServerThread extends Thread
 							 */
 						}
 						break;
-					case "3":
-						//
-						break;
-				
+					case "3"://nos manda sus datos
+						usuario.ip = streamIn.readUTF();
+						usuario.puerto = streamIn.readUTF();
+						break;			
 				}
 			}
 			this.close();
