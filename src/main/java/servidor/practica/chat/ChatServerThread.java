@@ -39,8 +39,6 @@ public class ChatServerThread extends Thread
 					case HABLARCON:
 						pendientesPermitidos = false;
 						String idCompañero = streamIn.readUTF();
-						usuario.puerto = streamIn.readUTF();
-						
 						Optional<Usuario> compañero = Servidor.obj().getUsuario(idCompañero);
 						compañero.ifPresent(llamado ->
 						{

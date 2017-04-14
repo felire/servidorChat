@@ -3,6 +3,7 @@ package servidor.practica.chat;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class Usuario 
 {
@@ -13,7 +14,7 @@ public class Usuario
 	
 	public Boolean tieneDatosDeConexion()
 	{
-		return (/*ip != null && */puerto != null);
+		return (puerto != null);
 	}
 	
 	public Usuario(Socket socket)
@@ -47,11 +48,20 @@ public class Usuario
 		}
 	}
 	
-	public void recibirPendiente(Mensaje mensaje)
+	public void recibirPendientes(ArrayList<Mensaje> mensajes)
 	{
 		try {
-			streamOut.writeUTF(mensaje.emisor);
-			streamOut.writeUTF(mensaje.mensaje);	 
+			streamOut.writeUTF(TipoMensaje.MENSAJEPENDIENTE.string());
+			streamOut.writeUTF(String.valueOf(mensajes.size()));
+			mensajes.forEach(mensaje ->
+			{
+				try {
+					streamOut.writeUTF(mensaje.emisor);
+					streamOut.writeUTF(mensaje.mensaje);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}			
+			});	 
 		}
 		catch (IOException e) {
 			e.printStackTrace();
