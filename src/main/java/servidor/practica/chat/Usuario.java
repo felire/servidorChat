@@ -9,8 +9,10 @@ public class Usuario
 {
 	public String id;
 	public Socket socket;
+	public String ip;
 	public String puerto;
 	private DataOutputStream streamOut; //el streamIn lo maneja cada hilo
+	public Boolean conectado;
 	
 	public Boolean tieneDatosDeConexion()
 	{
@@ -19,18 +21,26 @@ public class Usuario
 	
 	public Usuario(Socket socket)
 	{
-		this.puerto = null;
+		this.abroSocket(socket);
+	}
+	
+	public void cierroSocket() throws IOException
+	{
+		conectado = false;
+		socket.close();
+		streamOut.close();
+	}
+	
+	public void abroSocket(Socket socket)
+	{
+		this.conectado = true;
 		this.socket = socket;
+		this.ip = socket.getInetAddress().toString().substring(1);
 		try {
 			this.streamOut = new DataOutputStream(socket.getOutputStream());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-	
-	public String ip()
-	{
-		return socket.getInetAddress().toString();
 	}
 	
 	public Boolean soyUsuario(String id_)

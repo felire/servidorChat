@@ -11,10 +11,11 @@ public class ChatServerThread extends Thread
 	private DataInputStream streamIn =  null;
 	private DataOutputStream streamOut = null;
 	private Usuario usuario;
+	private Socket socket;
 	
 	public ChatServerThread(Socket socket)
 	{
-		this.usuario = new Usuario(socket);
+		this.socket = socket;
 	}
 
 	public void run()
@@ -22,17 +23,29 @@ public class ChatServerThread extends Thread
 		System.out.println("Server Thread " + usuario.socket.getPort() + " running.");
 		try
 		{
-			usuario.id = streamIn.readUTF();
+			Optional<Usuario> op = Servidor.obj().getUsuario(streamIn.readUTF());
+			if(op.isPresent())
+			{
+				usuario = op.get();
+				usuario.abroSocket(socket);
+			}
+			else
+			{
+				usuario = new Usuario(socket);
+				usuario.puerto = streamIn.readUTF(); //si se habia desconectado nos deberia mandar su puerto
+			}
 			System.out.println(usuario.id);
 			Servidor.obj().seConectoUsuario(usuario);
 			TipoMensaje tipo = null;
 			Boolean pendientesPermitidos = false;
 			String idPendiente = null;
-			while(tipo != TipoMensaje.MEDESCONECTO)
+			while(tipo != TipoMensaje.MEDESCONECTO && tipo != TipoMensaje.CIERROSOCKET)
 			{
 				tipo = TipoMensaje.values()[Integer.parseInt(streamIn.readUTF())];
 				switch(tipo)
 				{
+					case CIERROSOCKET:
+						usuario.cierroSocket();
 					case MEDESCONECTO:
 						Servidor.obj().seDesconectoUsuario(usuario);
 						break;
@@ -51,10 +64,6 @@ public class ChatServerThread extends Thread
 							streamOut.writeUTF(TipoMensaje.NOESTADISPONIBLE.toString());
 						}
 						break;
-					case DATOSDECONEXION://nos manda sus datos
-						pendientesPermitidos = false;
-						usuario.puerto = streamIn.readUTF();
-						break;			
 					case MENSAJEPENDIENTE:
 						if(pendientesPermitidos)//si no existe el usuario? se podria chequear con los tokens
 						{
@@ -78,8 +87,8 @@ public class ChatServerThread extends Thread
 	
 	public void open() throws IOException
 	{
-		streamIn = new DataInputStream(usuario.socket.getInputStream());
-		streamOut = new DataOutputStream(usuario.socket.getOutputStream());
+		streamIn = new DataInputStream(socket.getInputStream());
+		streamOut = new DataOutputStream(socket.getOutputStream());
 	}
 	
 	public void close() throws IOException

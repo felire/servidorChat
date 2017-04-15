@@ -101,18 +101,24 @@ public class Servidor implements Runnable
 
 	public synchronized void seConectoUsuario(Usuario usuario)//se encarga de entregar mensajes pendientes
 	{
-		usuariosConectados.add(usuario);
-		ArrayList<Mensaje> porMandar = new ArrayList<Mensaje>();
-		mensajesPendientes.removeIf(msj -> 
+		if(usuariosConectados.contains(usuario))
 		{
-			if(msj.receptor.equals(usuario.id))
+			ArrayList<Mensaje> porMandar = new ArrayList<Mensaje>();
+			mensajesPendientes.removeIf(msj -> 
 			{
-				porMandar.add(msj);
-				return true;
-			}
-			return false;
-		});
-		usuario.recibirPendientes(porMandar);
+				if(msj.receptor.equals(usuario.id))
+				{
+					porMandar.add(msj);
+					return true;
+				}
+				return false;
+			});
+			usuario.recibirPendientes(porMandar);
+		}
+		else
+		{
+			usuariosConectados.add(usuario);
+		}
 	}
 	
 	public synchronized Optional<Usuario> getUsuario(String id)
@@ -148,15 +154,8 @@ public class Servidor implements Runnable
 	
 	public void establecerConexion(Usuario llamador, Usuario llamado)
 	{
-		llamado.puerto = null;
-		
-		llamado.recibir(TipoMensaje.PEDIDODECONEXION.string());  //poner semaforos
-		llamado.recibir(llamador.id); //quien quiere hablar con el
-		
-		while(llamado.tieneDatosDeConexion() == false);
-		
-		llamador.recibir(TipoMensaje.ESTABLECERCONEXION.string());  //poner semaforos
-		llamador.recibir(llamado.ip());
+		llamador.recibir(TipoMensaje.DATOSDECONEXION.string());  //poner semaforos
+		llamador.recibir(llamado.ip);
 		llamador.recibir(llamado.puerto);
 	}
 	
