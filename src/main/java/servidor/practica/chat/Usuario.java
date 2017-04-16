@@ -14,14 +14,14 @@ public class Usuario
 	private DataOutputStream streamOut; //el streamIn lo maneja cada hilo
 	public Boolean conectado;
 	
-	public Boolean tieneDatosDeConexion()
-	{
-		return (puerto != null);
-	}
-	
 	public Usuario(Socket socket)
 	{
 		this.abroSocket(socket);
+	}
+	
+	public Usuario(String id)
+	{
+		this.id = id;
 	}
 	
 	public void cierroSocket() throws IOException

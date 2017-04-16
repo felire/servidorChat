@@ -103,7 +103,7 @@ public class Servidor implements Runnable
 	{
 		if(usuariosConectados.contains(usuario))
 		{
-			ArrayList<Mensaje> porMandar = new ArrayList<Mensaje>();
+			/*ArrayList<Mensaje> porMandar = new ArrayList<Mensaje>();
 			mensajesPendientes.removeIf(msj -> 
 			{
 				if(msj.receptor.equals(usuario.id))
@@ -113,7 +113,8 @@ public class Servidor implements Runnable
 				}
 				return false;
 			});
-			usuario.recibirPendientes(porMandar);
+			//usuario.recibirPendientes(porMandar);
+			*/
 		}
 		else
 		{
@@ -125,6 +126,22 @@ public class Servidor implements Runnable
 	{
 		return usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
 	}
+	
+	public synchronized Usuario dameAlPuto(String id)
+	{
+		Optional<Usuario> usr = usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
+		if(usr.isPresent())
+		{
+			return usr.get();
+		}
+		else
+		{
+			Usuario usuario = new Usuario(id);
+			System.out.println("agrego a " + usuario.id);
+			usuariosConectados.add(usuario);
+			return usuario;
+		}
+	}	
 	
 	public void start()
 	{
@@ -154,7 +171,7 @@ public class Servidor implements Runnable
 	
 	public void establecerConexion(Usuario llamador, Usuario llamado)
 	{
-		llamador.recibir(TipoMensaje.DATOSDECONEXION.string());  //poner semaforos
+		llamador.recibir(TipoMensaje.DATOSDECONEXION.string());
 		llamador.recibir(llamado.ip);
 		llamador.recibir(llamado.puerto);
 	}

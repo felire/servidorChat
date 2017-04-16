@@ -20,38 +20,34 @@ public class ChatServerThread extends Thread
 
 	public void run()
 	{
-		System.out.println("Server Thread " + usuario.socket.getPort() + " running.");
+		System.out.println("Server Thread " + socket.getPort() + " running.");
 		try
 		{
-			Optional<Usuario> op = Servidor.obj().getUsuario(streamIn.readUTF());
-			if(op.isPresent())
-			{
-				usuario = op.get();
-				usuario.abroSocket(socket);
-			}
-			else
-			{
-				usuario = new Usuario(socket);
-				usuario.puerto = streamIn.readUTF(); //si se habia desconectado nos deberia mandar su puerto
-			}
+			String usr = streamIn.readUTF();
+			usuario = Servidor.obj().dameAlPuto(usr);
+			usuario.abroSocket(socket);
+			usuario.puerto = streamIn.readUTF(); //si se habia desconectado nos deberia mandar su puerto
+
 			System.out.println(usuario.id);
-			Servidor.obj().seConectoUsuario(usuario);
 			TipoMensaje tipo = null;
 			Boolean pendientesPermitidos = false;
 			String idPendiente = null;
 			while(tipo != TipoMensaje.MEDESCONECTO && tipo != TipoMensaje.CIERROSOCKET)
 			{
-				tipo = TipoMensaje.values()[Integer.parseInt(streamIn.readUTF())];
+				String hola = streamIn.readUTF();
+				tipo = TipoMensaje.values()[Integer.parseInt(hola)];
 				switch(tipo)
 				{
 					case CIERROSOCKET:
 						usuario.cierroSocket();
+						break;
 					case MEDESCONECTO:
 						Servidor.obj().seDesconectoUsuario(usuario);
 						break;
 					case HABLARCON:
 						pendientesPermitidos = false;
 						String idCompañero = streamIn.readUTF();
+						System.out.println("quiere hablar con " + idCompañero);
 						Optional<Usuario> compañero = Servidor.obj().getUsuario(idCompañero);
 						compañero.ifPresent(llamado ->
 						{
@@ -61,7 +57,7 @@ public class ChatServerThread extends Thread
 						{
 							idPendiente = idCompañero;
 							pendientesPermitidos = true;
-							streamOut.writeUTF(TipoMensaje.NOESTADISPONIBLE.toString());
+							streamOut.writeUTF(TipoMensaje.NOESTADISPONIBLE.string());
 						}
 						break;
 					case MENSAJEPENDIENTE:
@@ -93,8 +89,6 @@ public class ChatServerThread extends Thread
 	
 	public void close() throws IOException
 	{
-		usuario.socket.close();		
-		if(usuario != null) Servidor.obj().seDesconectoUsuario(usuario);
 		if (streamIn != null) streamIn.close();
 	}
 }
