@@ -24,18 +24,15 @@ public class ChatServerThread extends Thread
 		try
 		{
 			String usr = streamIn.readUTF();
-			usuario = Servidor.obj().dameAlPuto(usr);
+			usuario = Servidor.obj().generarUsuario(usr);
 			usuario.abroSocket(socket);
 			usuario.puerto = streamIn.readUTF(); //si se habia desconectado nos deberia mandar su puerto
-
-			System.out.println(usuario.id);
 			TipoMensaje tipo = null;
 			Boolean pendientesPermitidos = false;
 			String idPendiente = null;
 			while(tipo != TipoMensaje.MEDESCONECTO && tipo != TipoMensaje.CIERROSOCKET)
 			{
-				String hola = streamIn.readUTF();
-				tipo = TipoMensaje.values()[Integer.parseInt(hola)];
+				tipo = TipoMensaje.values()[Integer.parseInt(streamIn.readUTF())];
 				switch(tipo)
 				{
 					case CIERROSOCKET:

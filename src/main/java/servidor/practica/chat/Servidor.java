@@ -127,7 +127,7 @@ public class Servidor implements Runnable
 		return usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
 	}
 	
-	public synchronized Usuario dameAlPuto(String id)
+	public synchronized Usuario generarUsuario(String id)
 	{
 		Optional<Usuario> usr = usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
 		if(usr.isPresent())
@@ -185,5 +185,4 @@ public class Servidor implements Runnable
 	{
 		Servidor.obj().start();
 	}
-
 }
