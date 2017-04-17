@@ -12,7 +12,6 @@ public class Usuario
 	public String ip;
 	public String puerto;
 	private DataOutputStream streamOut; //el streamIn lo maneja el ChatServerThread
-	public Boolean conectado;
 		
 	public Usuario(String id)
 	{
@@ -21,14 +20,12 @@ public class Usuario
 	
 	public void cierroSocket() throws IOException
 	{
-		conectado = false;
 		socket.close();
 		streamOut.close();
 	}
 	
 	public void abroSocket(Socket socket)
 	{
-		this.conectado = true;
 		this.socket = socket;
 		this.ip = socket.getInetAddress().toString().substring(1);
 		try {
