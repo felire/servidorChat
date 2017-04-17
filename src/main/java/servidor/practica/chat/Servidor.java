@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,12 +16,14 @@ public class Servidor implements Runnable
 	private Thread thread;
 	private List<ChatServerThread> chats;
 	private List<Mensaje> mensajesPendientes;
+	private HashMap<String, String> tokens;
 	
 	public Servidor(int puerto)
 	{
 		usuariosConectados = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
 		mensajesPendientes = new ArrayList<Mensaje>();
+		tokens = new HashMap<String, String>();
 		thread = null;
 		try 
 		{
@@ -101,23 +104,59 @@ public class Servidor implements Runnable
 
 	public synchronized void seConectoUsuario(Usuario usuario)//se encarga de entregar mensajes pendientes
 	{
-		usuariosConectados.add(usuario);
-		ArrayList<Mensaje> porMandar = new ArrayList<Mensaje>();
-		mensajesPendientes.removeIf(msj -> 
+		if(usuariosConectados.contains(usuario))
 		{
-			if(msj.receptor.equals(usuario.id))
+			/*ArrayList<Mensaje> porMandar = new ArrayList<Mensaje>();
+			mensajesPendientes.removeIf(msj -> 
 			{
-				porMandar.add(msj);
-				return true;
-			}
-			return false;
-		});
-		usuario.recibirPendientes(porMandar);
+				if(msj.receptor.equals(usuario.id))
+				{
+					porMandar.add(msj);
+					return true;
+				}
+				return false;
+			});
+			//usuario.recibirPendientes(porMandar);
+			*/
+		}
+		else
+		{
+			usuariosConectados.add(usuario);
+		}
 	}
 	
 	public synchronized Optional<Usuario> getUsuario(String id)
 	{
 		return usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
+	}
+	
+	public synchronized Usuario generarUsuario(String id)
+	{
+		Optional<Usuario> usr = usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
+		if(usr.isPresent())
+		{
+			return usr.get();
+		}
+		else
+		{
+			Usuario usuario = new Usuario(id);
+			System.out.println("agrego a " + usuario.id);
+			usuariosConectados.add(usuario);
+			return usuario;
+		}
+	}
+	
+	public Boolean validar(String id, String token)
+	{
+		if(tokens.containsKey(id))
+		{
+			return tokens.get(id).equals(token);
+		}
+		else
+		{
+			tokens.put(id, token);
+			return true;
+		}
 	}
 	
 	public void start()
@@ -148,15 +187,8 @@ public class Servidor implements Runnable
 	
 	public void establecerConexion(Usuario llamador, Usuario llamado)
 	{
-		llamado.puerto = null;
-		
-		llamado.recibir(TipoMensaje.PEDIDODECONEXION.string());  //poner semaforos
-		llamado.recibir(llamador.id); //quien quiere hablar con el
-		
-		while(llamado.tieneDatosDeConexion() == false);
-		
-		llamador.recibir(TipoMensaje.ESTABLECERCONEXION.string());  //poner semaforos
-		llamador.recibir(llamado.ip());
+		llamador.recibir(TipoMensaje.DATOSDECONEXION.string());
+		llamador.recibir(llamado.ip);
 		llamador.recibir(llamado.puerto);
 	}
 	
@@ -169,5 +201,4 @@ public class Servidor implements Runnable
 	{
 		Servidor.obj().start();
 	}
-
 }

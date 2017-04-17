@@ -9,28 +9,30 @@ public class Usuario
 {
 	public String id;
 	public Socket socket;
+	public String ip;
 	public String puerto;
-	private DataOutputStream streamOut; //el streamIn lo maneja cada hilo
-	
-	public Boolean tieneDatosDeConexion()
+	private DataOutputStream streamOut; //el streamIn lo maneja el ChatServerThread
+		
+	public Usuario(String id)
 	{
-		return (puerto != null);
+		this.id = id;
 	}
 	
-	public Usuario(Socket socket)
+	public void cierroSocket() throws IOException
 	{
-		this.puerto = null;
+		socket.close();
+		streamOut.close();
+	}
+	
+	public void abroSocket(Socket socket)
+	{
 		this.socket = socket;
+		this.ip = socket.getInetAddress().toString().substring(1);
 		try {
 			this.streamOut = new DataOutputStream(socket.getOutputStream());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-	
-	public String ip()
-	{
-		return socket.getInetAddress().toString();
 	}
 	
 	public Boolean soyUsuario(String id_)

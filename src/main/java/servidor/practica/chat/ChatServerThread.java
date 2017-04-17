@@ -11,34 +11,51 @@ public class ChatServerThread extends Thread
 	private DataInputStream streamIn =  null;
 	private DataOutputStream streamOut = null;
 	private Usuario usuario;
+	private Socket socket;
 	
 	public ChatServerThread(Socket socket)
 	{
-		this.usuario = new Usuario(socket);
+		this.socket = socket;
 	}
 
 	public void run()
 	{
-		System.out.println("Server Thread " + usuario.socket.getPort() + " running.");
+		System.out.println("Server Thread " + socket.getPort() + " running.");
 		try
 		{
-			usuario.id = streamIn.readUTF();
-			System.out.println(usuario.id);
-			Servidor.obj().seConectoUsuario(usuario);
+			String idUsr = streamIn.readUTF();
+			usuario = Servidor.obj().generarUsuario(idUsr);
+			String token = streamIn.readUTF();
+			if (Servidor.obj().validar(usuario.id, token) == false)
+			{
+				try {
+					Thread.sleep(7000);// para complicar un brute force
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				this.close();
+				return;
+			}
+			usuario.abroSocket(socket);
+			usuario.puerto = streamIn.readUTF(); //si se habia desconectado nos deberia mandar su puerto
 			TipoMensaje tipo = null;
 			Boolean pendientesPermitidos = false;
 			String idPendiente = null;
-			while(tipo != TipoMensaje.MEDESCONECTO)
+			while(tipo != TipoMensaje.MEDESCONECTO && tipo != TipoMensaje.CIERROSOCKET)
 			{
 				tipo = TipoMensaje.values()[Integer.parseInt(streamIn.readUTF())];
 				switch(tipo)
 				{
+					case CIERROSOCKET:
+						usuario.cierroSocket();
+						break;
 					case MEDESCONECTO:
 						Servidor.obj().seDesconectoUsuario(usuario);
 						break;
 					case HABLARCON:
 						pendientesPermitidos = false;
 						String idCompañero = streamIn.readUTF();
+						System.out.println("quiere hablar con " + idCompañero);
 						Optional<Usuario> compañero = Servidor.obj().getUsuario(idCompañero);
 						compañero.ifPresent(llamado ->
 						{
@@ -48,13 +65,9 @@ public class ChatServerThread extends Thread
 						{
 							idPendiente = idCompañero;
 							pendientesPermitidos = true;
-							streamOut.writeUTF(TipoMensaje.NOESTADISPONIBLE.toString());
+							streamOut.writeUTF(TipoMensaje.NOESTADISPONIBLE.string());
 						}
 						break;
-					case DATOSDECONEXION://nos manda sus datos
-						pendientesPermitidos = false;
-						usuario.puerto = streamIn.readUTF();
-						break;			
 					case MENSAJEPENDIENTE:
 						if(pendientesPermitidos)//si no existe el usuario? se podria chequear con los tokens
 						{
@@ -62,8 +75,8 @@ public class ChatServerThread extends Thread
 							Mensaje mensaje = new Mensaje(usuario.id, idPendiente, mensajePendiente);
 							Servidor.obj().mensajePendiente(mensaje);
 						}
-				default:
-					break;
+					default:
+						break;
 				}
 			}
 			this.close();
@@ -78,14 +91,12 @@ public class ChatServerThread extends Thread
 	
 	public void open() throws IOException
 	{
-		streamIn = new DataInputStream(usuario.socket.getInputStream());
-		streamOut = new DataOutputStream(usuario.socket.getOutputStream());
+		streamIn = new DataInputStream(socket.getInputStream());
+		streamOut = new DataOutputStream(socket.getOutputStream());
 	}
 	
 	public void close() throws IOException
 	{
-		usuario.socket.close();		
-		if(usuario != null) Servidor.obj().seDesconectoUsuario(usuario);
 		if (streamIn != null) streamIn.close();
 	}
 }
