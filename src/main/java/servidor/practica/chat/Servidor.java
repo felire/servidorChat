@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,12 +16,14 @@ public class Servidor implements Runnable
 	private Thread thread;
 	private List<ChatServerThread> chats;
 	private List<Mensaje> mensajesPendientes;
+	private HashMap<String, String> tokens;
 	
 	public Servidor(int puerto)
 	{
 		usuariosConectados = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
 		mensajesPendientes = new ArrayList<Mensaje>();
+		tokens = new HashMap<String, String>();
 		thread = null;
 		try 
 		{
@@ -141,7 +144,20 @@ public class Servidor implements Runnable
 			usuariosConectados.add(usuario);
 			return usuario;
 		}
-	}	
+	}
+	
+	public Boolean validar(String id, String token)
+	{
+		if(tokens.containsKey(id))
+		{
+			return tokens.get(id).equals(token);
+		}
+		else
+		{
+			tokens.put(id, token);
+			return true;
+		}
+	}
 	
 	public void start()
 	{

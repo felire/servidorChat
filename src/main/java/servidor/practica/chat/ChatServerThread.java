@@ -23,8 +23,19 @@ public class ChatServerThread extends Thread
 		System.out.println("Server Thread " + socket.getPort() + " running.");
 		try
 		{
-			String usr = streamIn.readUTF();
-			usuario = Servidor.obj().generarUsuario(usr);
+			String idUsr = streamIn.readUTF();
+			usuario = Servidor.obj().generarUsuario(idUsr);
+			String token = streamIn.readUTF();
+			if (Servidor.obj().validar(usuario.id, token) == false)
+			{
+				try {
+					Thread.sleep(7000);// para complicar un brute force
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				this.close();
+				return;
+			}
 			usuario.abroSocket(socket);
 			usuario.puerto = streamIn.readUTF(); //si se habia desconectado nos deberia mandar su puerto
 			TipoMensaje tipo = null;
@@ -64,8 +75,8 @@ public class ChatServerThread extends Thread
 							Mensaje mensaje = new Mensaje(usuario.id, idPendiente, mensajePendiente);
 							Servidor.obj().mensajePendiente(mensaje);
 						}
-				default:
-					break;
+					default:
+						break;
 				}
 			}
 			this.close();

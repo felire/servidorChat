@@ -11,14 +11,9 @@ public class Usuario
 	public Socket socket;
 	public String ip;
 	public String puerto;
-	private DataOutputStream streamOut; //el streamIn lo maneja cada hilo
+	private DataOutputStream streamOut; //el streamIn lo maneja el ChatServerThread
 	public Boolean conectado;
-	
-	public Usuario(Socket socket)
-	{
-		this.abroSocket(socket);
-	}
-	
+		
 	public Usuario(String id)
 	{
 		this.id = id;
