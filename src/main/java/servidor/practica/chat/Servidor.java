@@ -146,17 +146,19 @@ public class Servidor implements Runnable
 		}
 	}
 	
-	public Boolean validar(String id, String token)
+	public Boolean validar(String id, String desafio, String respuesta) throws Exception
 	{
-		if(tokens.containsKey(id))
+		if(!tokens.containsKey(id))
 		{
-			return tokens.get(id).equals(token);
-		}
-		else
-		{
-			tokens.put(id, token);
+			tokens.put(id, respuesta);
 			return true;
 		}
+		String token = tokens.get(id);
+		int mid = token.length()/2;
+		String mezcla = token.substring(0, mid);
+		mezcla.concat(desafio);
+		mezcla.concat(token.substring(mid, token.length()));
+		return Hash.sha256(mezcla).equals(respuesta);
 	}
 	
 	public void start()

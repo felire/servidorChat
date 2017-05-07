@@ -25,8 +25,10 @@ public class ChatServerThread extends Thread
 		{
 			String idUsr = streamIn.readUTF();
 			usuario = Servidor.obj().generarUsuario(idUsr);
-			String token = streamIn.readUTF();
-			if (Servidor.obj().validar(usuario.id, token) == false)
+			String desafio = RandomString.generateRandomToken();
+			streamOut.writeUTF(desafio);
+			String respuesta = streamIn.readUTF();
+			if (Servidor.obj().validar(usuario.id, desafio, respuesta) == false)
 			{
 				try {
 					Thread.sleep(7000);// para complicar un brute force
@@ -80,7 +82,7 @@ public class ChatServerThread extends Thread
 				}
 			}
 			this.close();
-		}catch(IOException ioe) {
+		}catch(Exception ioe) {
 			try{
 				this.close();
 			} catch (IOException e) {
