@@ -102,27 +102,19 @@ public class Servidor implements Runnable
 		usuariosConectados.remove(usuario);
 	}
 
-	public synchronized void seConectoUsuario(Usuario usuario)//se encarga de entregar mensajes pendientes
+	public void mandarMensajesPendientes(Usuario usuario)//se encarga de entregar mensajes pendientes
 	{
-		if(usuariosConectados.contains(usuario))//TODO mandar los mensajes pendientes
+		ArrayList<Mensaje> mensajesPorMandar = new ArrayList<Mensaje>();
+		mensajesPendientes.removeIf(msj -> 
 		{
-			/*ArrayList<Mensaje> porMandar = new ArrayList<Mensaje>();
-			mensajesPendientes.removeIf(msj -> 
+			if(msj.receptor.equals(usuario.id))
 			{
-				if(msj.receptor.equals(usuario.id))
-				{
-					porMandar.add(msj);
-					return true;
-				}
-				return false;
-			});
-			//usuario.recibirPendientes(porMandar);
-			*/
-		}
-		else
-		{
-			usuariosConectados.add(usuario);
-		}
+				mensajesPorMandar.add(msj);
+				return true;
+			}
+			return false;
+		});
+		//usuario.recibirPendientes(mensajesPorMandar);
 	}
 	
 	public synchronized Optional<Usuario> getUsuario(String id)
@@ -132,10 +124,10 @@ public class Servidor implements Runnable
 	
 	public synchronized Usuario generarUsuario(String id)
 	{
-		Optional<Usuario> usr = usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
-		if(usr.isPresent())
+		Optional<Usuario> user = usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
+		if(user.isPresent())
 		{
-			return usr.get();
+			return user.get();
 		}
 		else
 		{
@@ -159,6 +151,10 @@ public class Servidor implements Runnable
 		String mezcla = token.substring(0, mid);
 		mezcla.concat(desafio);
 		mezcla.concat(token.substring(mid, token.length()));
+		if(Hash.sha256(mezcla).equals(respuesta))
+		{
+			System.out.println("valido a " + usuario.id);
+		}
 		return Hash.sha256(mezcla).equals(respuesta);
 	}
 	

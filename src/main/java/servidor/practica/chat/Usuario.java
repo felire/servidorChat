@@ -11,7 +11,7 @@ public class Usuario
 	public Socket socket;
 	public String ip;
 	public String puerto;
-	private DataOutputStream streamOut; //el streamIn lo maneja el ChatServerThread
+	private DataOutputStream streamOut;
 		
 	public Usuario(String id)
 	{
@@ -24,15 +24,11 @@ public class Usuario
 		streamOut.close();
 	}
 	
-	public void abroSocket(Socket socket)
+	public void abroSocket(Socket socket, DataOutputStream stream)
 	{
 		this.socket = socket;
 		this.ip = socket.getInetAddress().toString().substring(1);
-		try {
-			this.streamOut = new DataOutputStream(socket.getOutputStream());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		this.streamOut = stream;
 	}
 	
 	public Boolean soyUsuario(String id_)
@@ -53,7 +49,7 @@ public class Usuario
 	public void recibirPendientes(ArrayList<Mensaje> mensajes)
 	{
 		try {
-			streamOut.writeUTF(TipoMensaje.MENSAJEPENDIENTE.string());
+			System.out.println("mando un " + String.valueOf(mensajes.size()));
 			streamOut.writeUTF(String.valueOf(mensajes.size()));
 			mensajes.forEach(mensaje ->
 			{
