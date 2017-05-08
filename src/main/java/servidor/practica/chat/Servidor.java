@@ -114,7 +114,7 @@ public class Servidor implements Runnable
 			}
 			return false;
 		});
-		//usuario.recibirPendientes(mensajesPorMandar);
+		usuario.recibirPendientes(mensajesPorMandar);
 	}
 	
 	public synchronized Optional<Usuario> getUsuario(String id)
@@ -151,10 +151,6 @@ public class Servidor implements Runnable
 		String mezcla = token.substring(0, mid);
 		mezcla.concat(desafio);
 		mezcla.concat(token.substring(mid, token.length()));
-		if(Hash.sha256(mezcla).equals(respuesta))
-		{
-			System.out.println("valido a " + usuario.id);
-		}
 		return Hash.sha256(mezcla).equals(respuesta);
 	}
 	

@@ -41,7 +41,7 @@ public class ChatServerThread extends Thread
 			
 			usuario.abroSocket(socket, streamOut);
 			usuario.puerto = streamIn.readUTF(); //puerto en el que espera conexiones
-			//Servidor.obj().mandarMensajesPendientes(usuario);
+			Servidor.obj().mandarMensajesPendientes(usuario);
 			TipoMensaje tipo = null;
 			String idRemitente;
 			

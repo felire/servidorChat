@@ -49,7 +49,6 @@ public class Usuario
 	public void recibirPendientes(ArrayList<Mensaje> mensajes)
 	{
 		try {
-			System.out.println("mando un " + String.valueOf(mensajes.size()));
 			streamOut.writeUTF(String.valueOf(mensajes.size()));
 			mensajes.forEach(mensaje ->
 			{
