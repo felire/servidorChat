@@ -104,7 +104,7 @@ public class Servidor implements Runnable
 
 	public synchronized void seConectoUsuario(Usuario usuario)//se encarga de entregar mensajes pendientes
 	{
-		if(usuariosConectados.contains(usuario))
+		if(usuariosConectados.contains(usuario))//TODO mandar los mensajes pendientes
 		{
 			/*ArrayList<Mensaje> porMandar = new ArrayList<Mensaje>();
 			mensajesPendientes.removeIf(msj -> 
@@ -146,9 +146,10 @@ public class Servidor implements Runnable
 		}
 	}
 	
-	public Boolean validar(String id, String desafio, String respuesta) throws Exception
+	public Boolean validar(Usuario usuario, String desafio, String respuesta) throws Exception
 	{
-		if(!tokens.containsKey(id))
+		String id = usuario.id;
+		if(!tokens.containsKey(id))//primera vez que se conecta
 		{
 			tokens.put(id, respuesta);
 			return true;

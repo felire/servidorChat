@@ -10,7 +10,6 @@ public class ChatServerThread extends Thread
 {
 	private DataInputStream streamIn =  null;
 	private DataOutputStream streamOut = null;
-	private Usuario usuario;
 	private Socket socket;
 	
 	public ChatServerThread(Socket socket)
@@ -23,26 +22,29 @@ public class ChatServerThread extends Thread
 		System.out.println("Server Thread " + socket.getPort() + " running.");
 		try
 		{
-			String idUsr = streamIn.readUTF();
-			usuario = Servidor.obj().generarUsuario(idUsr);
+			String idUsuario = streamIn.readUTF();
+			Usuario usuario = Servidor.obj().generarUsuario(idUsuario);
 			String desafio = RandomString.generateRandomToken();
 			streamOut.writeUTF(desafio);
 			String respuesta = streamIn.readUTF();
-			if (Servidor.obj().validar(usuario.id, desafio, respuesta) == false)
+			
+			if (Servidor.obj().validar(usuario, desafio, respuesta) == false)
 			{
 				try {
-					Thread.sleep(7000);// para complicar un brute force
+					Thread.sleep(7000);// para complicar un dos
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 				this.close();
 				return;
 			}
+			
 			usuario.abroSocket(socket);
-			usuario.puerto = streamIn.readUTF(); //si se habia desconectado nos deberia mandar su puerto
+			usuario.puerto = streamIn.readUTF(); //puerto en el que espera conexiones
 			TipoMensaje tipo = null;
 			Boolean pendientesPermitidos = false;
 			String idPendiente = null;
+			
 			while(tipo != TipoMensaje.MEDESCONECTO && tipo != TipoMensaje.CIERROSOCKET)
 			{
 				tipo = TipoMensaje.values()[Integer.parseInt(streamIn.readUTF())];
