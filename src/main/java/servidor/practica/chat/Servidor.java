@@ -135,24 +135,17 @@ public class Servidor implements Runnable
 	public synchronized Boolean autenticar(Usuario usuario) throws Exception
 	{
 		String token;
-		System.out.println("por autenticaaaaaaaaaar");
 		if(tokens.containsKey(usuario.id) == false)//primera vez que se conecta
 		{
-			System.out.println("leo mierda pura");
 			token = usuario.streamIn.readUTF();
-			System.out.println("el token de " + usuario.id + " es " + token);
 			tokens.put(usuario.id, token);
+			usuario.streamOut.writeUTF(TipoMensaje.OK.string());
 			usuario.puerto = usuario.streamIn.readUTF(); //puerto en el que espera conexiones
 			System.out.println("el puerto es " + usuario.puerto );
 			return true;
 		}
-		System.out.println("la llave " + usuario.id + " ya exist en el map");
 		String desafio = RandomString.generateRandomToken();
-		System.out.println("por mandar el testo ");
-		usuario.streamOut.writeUTF(desafio);
-		
-		System.out.println("le mande el testo ");
-		
+		usuario.streamOut.writeUTF(desafio);	
 		String respuesta = usuario.streamIn.readUTF();
 		
 		token = tokens.get(usuario.id);
@@ -161,9 +154,12 @@ public class Servidor implements Runnable
 		mezcla.concat(desafio);
 		mezcla.concat(token.substring(mid, token.length()));
 		Boolean autenticado = Hash.sha256(mezcla).equals(respuesta);
-		
-		if(autenticado == false) return false;
-		
+		if(autenticado == false)
+		{
+			usuario.streamOut.writeUTF(TipoMensaje.ERROR.string());
+			return false;
+		}
+		usuario.streamOut.writeUTF(TipoMensaje.OK.string());
 		usuario.puerto = usuario.streamIn.readUTF(); //puerto en el que espera conexiones
 		Servidor.obj().mandarMensajesPendientes(usuario);
 		return true;

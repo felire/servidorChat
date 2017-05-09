@@ -35,12 +35,12 @@ public class Usuario
 		this.streamIn = streamIn;
 	}
 	
-	private String leer() throws IOException
+	public String leer() throws IOException
 	{
 		return streamIn.readUTF();
 	}
 	
-	private void escribir(String texto)
+	public void escribir(String texto)
 	{
 		try {
 			streamOut.writeUTF(texto);
