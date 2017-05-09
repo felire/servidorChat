@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Base64;
 
 public class Servidor implements Runnable
 {
@@ -126,7 +127,9 @@ public class Servidor implements Runnable
 		String token;
 		if(tokens.containsKey(usuario.id) == false)//primera vez que se conecta
 		{
-			token = usuario.leer();
+			String tokenBase64 = usuario.leer();
+			byte[] decoded = Base64.getDecoder().decode(tokenBase64.getBytes());
+			token = new String(decoded);
 			tokens.put(usuario.id, token);
 			usuario.escribir(TipoMensaje.OK.string());
 			usuario.puerto = usuario.leer(); //puerto en el que espera conexiones
