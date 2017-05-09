@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public class Servidor implements Runnable
 {
-	private List<Usuario> usuariosConectados;
+	private List<Usuario> usuarios;
 	private static Servidor obj = null;
 	private ServerSocket socketS;
 	private Thread thread;
@@ -20,7 +20,7 @@ public class Servidor implements Runnable
 	
 	public Servidor(int puerto)
 	{
-		usuariosConectados = new ArrayList<Usuario>();
+		usuarios = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
 		mensajesPendientes = new ArrayList<Mensaje>();
 		tokens = new HashMap<String, String>();
@@ -97,12 +97,7 @@ public class Servidor implements Runnable
 	    }
 	}
 	
-	public synchronized void seDesconectoUsuario(Usuario usuario)
-	{
-		usuariosConectados.remove(usuario);
-	}
-
-	public void mandarMensajesPendientes(Usuario usuario)//se encarga de entregar mensajes pendientes
+	private void mandarMensajesPendientes(Usuario usuario)
 	{
 		ArrayList<Mensaje> mensajesPorMandar = new ArrayList<Mensaje>();
 		mensajesPendientes.removeIf(msj -> 
@@ -119,12 +114,12 @@ public class Servidor implements Runnable
 	
 	public synchronized Optional<Usuario> getUsuario(String id)
 	{
-		return usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
+		return usuarios.stream().filter(u->u.soyUsuario(id)).findFirst();
 	}
 	
 	public synchronized Usuario generarUsuario(String id)
 	{
-		Optional<Usuario> user = usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
+		Optional<Usuario> user = usuarios.stream().filter(u->u.soyUsuario(id)).findFirst();
 		if(user.isPresent())
 		{
 			return user.get();
@@ -132,28 +127,76 @@ public class Servidor implements Runnable
 		else
 		{
 			Usuario usuario = new Usuario(id);
-			System.out.println("agrego a " + usuario.id);
-			usuariosConectados.add(usuario);
+			usuarios.add(usuario);
 			return usuario;
 		}
 	}
 	
-	public Boolean validar(Usuario usuario, String desafio, String respuesta) throws Exception
+	public synchronized Boolean autenticar(Usuario usuario) throws Exception
 	{
-		String id = usuario.id;
-		if(!tokens.containsKey(id))//primera vez que se conecta
+		String token;
+		System.out.println("por autenticaaaaaaaaaar");
+		if(tokens.containsKey(usuario.id) == false)//primera vez que se conecta
 		{
-			tokens.put(id, respuesta);
+			System.out.println("leo mierda pura");
+			token = usuario.streamIn.readUTF();
+			System.out.println("el token de " + usuario.id + " es " + token);
+			tokens.put(usuario.id, token);
+			usuario.puerto = usuario.streamIn.readUTF(); //puerto en el que espera conexiones
+			System.out.println("el puerto es " + usuario.puerto );
 			return true;
 		}
-		String token = tokens.get(id);
+		System.out.println("la llave " + usuario.id + " ya exist en el map");
+		String desafio = RandomString.generateRandomToken();
+		System.out.println("por mandar el testo ");
+		usuario.streamOut.writeUTF(desafio);
+		
+		System.out.println("le mande el testo ");
+		
+		String respuesta = usuario.streamIn.readUTF();
+		
+		token = tokens.get(usuario.id);
 		int mid = token.length()/2;
 		String mezcla = token.substring(0, mid);
 		mezcla.concat(desafio);
 		mezcla.concat(token.substring(mid, token.length()));
-		return Hash.sha256(mezcla).equals(respuesta);
+		Boolean autenticado = Hash.sha256(mezcla).equals(respuesta);
+		
+		if(autenticado == false) return false;
+		
+		usuario.puerto = usuario.streamIn.readUTF(); //puerto en el que espera conexiones
+		Servidor.obj().mandarMensajesPendientes(usuario);
+		return true;
 	}
 	
+	public void comunicar(Usuario usuario) throws IOException
+	{
+		String idRemitente = usuario.streamIn.readUTF();
+		Optional<Usuario> compañero = Servidor.obj().getUsuario(idRemitente);
+		compañero.ifPresent(llamado ->
+		{
+			try {
+				usuario.streamOut.writeUTF(TipoMensaje.DATOSDECONEXION.string());
+				usuario.streamOut.writeUTF(llamado.ip);
+				usuario.streamOut.writeUTF(llamado.puerto);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
+		if(!compañero.isPresent())
+		{
+			usuario.streamOut.writeUTF(TipoMensaje.NOESTADISPONIBLE.string());
+		}
+	}
+	
+	public void addMensajePendiente(Usuario usuario) throws IOException
+	{
+		String idRemitente = usuario.streamIn.readUTF();
+		String mensajePendiente = usuario.streamIn.readUTF();
+		Mensaje mensaje = new Mensaje(usuario.id, idRemitente, mensajePendiente);
+		mensajesPendientes.add(mensaje);
+	}
+		
 	public void start()
 	{
 		if (thread == null)
@@ -178,18 +221,6 @@ public class Servidor implements Runnable
 				e.printStackTrace();
 			}
 		});
-	}
-	
-	public void establecerConexion(Usuario llamador, Usuario llamado)
-	{
-		llamador.recibir(TipoMensaje.DATOSDECONEXION.string());
-		llamador.recibir(llamado.ip);
-		llamador.recibir(llamado.puerto);
-	}
-	
-	public void mensajePendiente(Mensaje mensaje)
-	{
-		mensajesPendientes.add(mensaje);
 	}
 	
 	public static void main(String args[])
