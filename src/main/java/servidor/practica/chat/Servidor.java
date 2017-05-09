@@ -1,5 +1,7 @@
 package servidor.practica.chat;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -96,6 +98,62 @@ public class Servidor implements Runnable
 			}
 	    }
 	}
+		
+	public synchronized Optional<Usuario> getUsuario(String id)
+	{
+		return usuarios.stream().filter(u->u.soyUsuario(id)).findFirst();
+	}
+	
+	public synchronized Usuario generarUsuario(String id, Socket socket, DataOutputStream streamOut, DataInputStream streamIn)
+	{
+		Optional<Usuario> user = getUsuario(id);
+		Usuario usuario;
+		if(user.isPresent())
+		{
+			usuario = user.get();
+		}
+		else
+		{
+			usuario = new Usuario(id);
+			usuarios.add(usuario);
+		}
+		usuario.abrirSocket(socket, streamOut, streamIn);
+		return usuario;
+	}
+	
+	public Boolean autenticar(Usuario usuario) throws Exception
+	{
+		String token;
+		if(tokens.containsKey(usuario.id) == false)//primera vez que se conecta
+		{
+			token = usuario.leer();
+			tokens.put(usuario.id, token);
+			usuario.escribir(TipoMensaje.OK.string());
+			usuario.puerto = usuario.leer(); //puerto en el que espera conexiones
+			return true;
+		}
+		String desafio = RandomString.generateRandomToken();
+
+		token = tokens.get(usuario.id);
+		int mid = token.length()/2;
+		String mezcla = token.substring(0, mid);
+		mezcla.concat(desafio);
+		mezcla.concat(token.substring(mid, token.length()));
+		
+		usuario.escribir(desafio);	
+		String respuesta = usuario.leer();
+		
+		Boolean autenticado = Hash.sha256(mezcla).equals(respuesta);
+		if(autenticado == false)
+		{
+			usuario.escribir(TipoMensaje.ERROR.string());
+			return false;
+		}
+		usuario.escribir(TipoMensaje.OK.string());
+		usuario.puerto = usuario.leer(); //puerto en el que espera conexiones
+		Servidor.obj().mandarMensajesPendientes(usuario);
+		return true;
+	}
 	
 	private void mandarMensajesPendientes(Usuario usuario)
 	{
@@ -112,83 +170,26 @@ public class Servidor implements Runnable
 		usuario.recibirPendientes(mensajesPorMandar);
 	}
 	
-	public synchronized Optional<Usuario> getUsuario(String id)
-	{
-		return usuarios.stream().filter(u->u.soyUsuario(id)).findFirst();
-	}
-	
-	public synchronized Usuario generarUsuario(String id)
-	{
-		Optional<Usuario> user = usuarios.stream().filter(u->u.soyUsuario(id)).findFirst();
-		if(user.isPresent())
-		{
-			return user.get();
-		}
-		else
-		{
-			Usuario usuario = new Usuario(id);
-			usuarios.add(usuario);
-			return usuario;
-		}
-	}
-	
-	public synchronized Boolean autenticar(Usuario usuario) throws Exception
-	{
-		String token;
-		if(tokens.containsKey(usuario.id) == false)//primera vez que se conecta
-		{
-			token = usuario.streamIn.readUTF();
-			tokens.put(usuario.id, token);
-			usuario.streamOut.writeUTF(TipoMensaje.OK.string());
-			usuario.puerto = usuario.streamIn.readUTF(); //puerto en el que espera conexiones
-			System.out.println("el puerto es " + usuario.puerto );
-			return true;
-		}
-		String desafio = RandomString.generateRandomToken();
-		usuario.streamOut.writeUTF(desafio);	
-		String respuesta = usuario.streamIn.readUTF();
-		
-		token = tokens.get(usuario.id);
-		int mid = token.length()/2;
-		String mezcla = token.substring(0, mid);
-		mezcla.concat(desafio);
-		mezcla.concat(token.substring(mid, token.length()));
-		Boolean autenticado = Hash.sha256(mezcla).equals(respuesta);
-		if(autenticado == false)
-		{
-			usuario.streamOut.writeUTF(TipoMensaje.ERROR.string());
-			return false;
-		}
-		usuario.streamOut.writeUTF(TipoMensaje.OK.string());
-		usuario.puerto = usuario.streamIn.readUTF(); //puerto en el que espera conexiones
-		Servidor.obj().mandarMensajesPendientes(usuario);
-		return true;
-	}
-	
 	public void comunicar(Usuario usuario) throws IOException
 	{
-		String idRemitente = usuario.streamIn.readUTF();
+		String idRemitente = usuario.leer();
 		Optional<Usuario> compañero = Servidor.obj().getUsuario(idRemitente);
 		compañero.ifPresent(llamado ->
 		{
-			try {
-				usuario.streamOut.writeUTF(TipoMensaje.DATOSDECONEXION.string());
-				usuario.streamOut.writeUTF(llamado.ip);
-				usuario.streamOut.writeUTF(llamado.puerto);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			usuario.escribir(TipoMensaje.DATOSDECONEXION.string());
+			usuario.escribir(llamado.ip);
+			usuario.escribir(llamado.puerto);
 		});
 		if(!compañero.isPresent())
 		{
-			usuario.streamOut.writeUTF(TipoMensaje.NOESTADISPONIBLE.string());
+			usuario.escribir(TipoMensaje.NOESTADISPONIBLE.string());
 		}
 	}
 	
 	public void addMensajePendiente(Usuario usuario) throws IOException
 	{
-		String idRemitente = usuario.streamIn.readUTF();
-		String mensajePendiente = usuario.streamIn.readUTF();
+		String idRemitente = usuario.leer();
+		String mensajePendiente = usuario.leer();
 		Mensaje mensaje = new Mensaje(usuario.id, idRemitente, mensajePendiente);
 		mensajesPendientes.add(mensaje);
 	}

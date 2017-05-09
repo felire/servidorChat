@@ -12,8 +12,8 @@ public class Usuario
 	public Socket socket;
 	public String ip;
 	public String puerto;
-	public DataOutputStream streamOut;
-	public DataInputStream streamIn;
+	private DataOutputStream streamOut;
+	private DataInputStream streamIn;
 		
 	public Usuario(String id)
 	{

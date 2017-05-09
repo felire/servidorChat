@@ -23,8 +23,7 @@ public class ChatServerThread extends Thread
 		{
 			String idUsuario = streamIn.readUTF();
 			System.out.println("Manejando al usuario: " + idUsuario);
-			Usuario usuario = Servidor.obj().generarUsuario(idUsuario);
-			usuario.abrirSocket(socket, streamOut, streamIn);
+			Usuario usuario = Servidor.obj().generarUsuario(idUsuario, socket, streamOut, streamIn);
 			Boolean valido = Servidor.obj().autenticar(usuario);
 			if(valido == false)
 			{
@@ -50,7 +49,7 @@ public class ChatServerThread extends Thread
 						break;
 				}
 			}
-			this.close();
+			return;
 		}catch(Exception ioe) {
 			try{
 				this.close();
