@@ -1,5 +1,7 @@
 package servidor.practica.chat;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -10,7 +12,7 @@ import java.util.Optional;
 
 public class Servidor implements Runnable
 {
-	private List<Usuario> usuariosConectados;
+	private List<Usuario> usuarios;
 	private static Servidor obj = null;
 	private ServerSocket socketS;
 	private Thread thread;
@@ -20,7 +22,7 @@ public class Servidor implements Runnable
 	
 	public Servidor(int puerto)
 	{
-		usuariosConectados = new ArrayList<Usuario>();
+		usuarios = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
 		mensajesPendientes = new ArrayList<Mensaje>();
 		tokens = new HashMap<String, String>();
@@ -96,13 +98,64 @@ public class Servidor implements Runnable
 			}
 	    }
 	}
-	
-	public synchronized void seDesconectoUsuario(Usuario usuario)
+		
+	public synchronized Optional<Usuario> getUsuario(String id)
 	{
-		usuariosConectados.remove(usuario);
+		return usuarios.stream().filter(u->u.soyUsuario(id)).findFirst();
 	}
+	
+	public synchronized Usuario generarUsuario(String id, Socket socket, DataOutputStream streamOut, DataInputStream streamIn)
+	{
+		Optional<Usuario> user = getUsuario(id);
+		Usuario usuario;
+		if(user.isPresent())
+		{
+			usuario = user.get();
+		}
+		else
+		{
+			usuario = new Usuario(id);
+			usuarios.add(usuario);
+		}
+		usuario.abrirSocket(socket, streamOut, streamIn);
+		return usuario;
+	}
+	
+	public Boolean autenticar(Usuario usuario) throws Exception
+	{
+		String token;
+		if(tokens.containsKey(usuario.id) == false)//primera vez que se conecta
+		{
+			token = usuario.leer();
+			tokens.put(usuario.id, token);
+			usuario.escribir(TipoMensaje.OK.string());
+			usuario.puerto = usuario.leer(); //puerto en el que espera conexiones
+			return true;
+		}
+		String desafio = RandomString.generateRandomToken();
 
-	public void mandarMensajesPendientes(Usuario usuario)//se encarga de entregar mensajes pendientes
+		token = tokens.get(usuario.id);
+		int mid = token.length()/2;
+		String mezcla = token.substring(0, mid);
+		mezcla.concat(desafio);
+		mezcla.concat(token.substring(mid, token.length()));
+		
+		usuario.escribir(desafio);	
+		String respuesta = usuario.leer();
+		
+		Boolean autenticado = Hash.sha256(mezcla).equals(respuesta);
+		if(autenticado == false)
+		{
+			usuario.escribir(TipoMensaje.ERROR.string());
+			return false;
+		}
+		usuario.escribir(TipoMensaje.OK.string());
+		usuario.puerto = usuario.leer(); //puerto en el que espera conexiones
+		Servidor.obj().mandarMensajesPendientes(usuario);
+		return true;
+	}
+	
+	private void mandarMensajesPendientes(Usuario usuario)
 	{
 		ArrayList<Mensaje> mensajesPorMandar = new ArrayList<Mensaje>();
 		mensajesPendientes.removeIf(msj -> 
@@ -117,43 +170,30 @@ public class Servidor implements Runnable
 		usuario.recibirPendientes(mensajesPorMandar);
 	}
 	
-	public synchronized Optional<Usuario> getUsuario(String id)
+	public void comunicar(Usuario usuario) throws IOException
 	{
-		return usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
-	}
-	
-	public synchronized Usuario generarUsuario(String id)
-	{
-		Optional<Usuario> user = usuariosConectados.stream().filter(u->u.soyUsuario(id)).findFirst();
-		if(user.isPresent())
+		String idRemitente = usuario.leer();
+		Optional<Usuario> compañero = Servidor.obj().getUsuario(idRemitente);
+		compañero.ifPresent(llamado ->
 		{
-			return user.get();
-		}
-		else
+			usuario.escribir(TipoMensaje.DATOSDECONEXION.string());
+			usuario.escribir(llamado.ip);
+			usuario.escribir(llamado.puerto);
+		});
+		if(!compañero.isPresent())
 		{
-			Usuario usuario = new Usuario(id);
-			System.out.println("agrego a " + usuario.id);
-			usuariosConectados.add(usuario);
-			return usuario;
+			usuario.escribir(TipoMensaje.NOESTADISPONIBLE.string());
 		}
 	}
 	
-	public Boolean validar(Usuario usuario, String desafio, String respuesta) throws Exception
+	public void addMensajePendiente(Usuario usuario) throws IOException
 	{
-		String id = usuario.id;
-		if(!tokens.containsKey(id))//primera vez que se conecta
-		{
-			tokens.put(id, respuesta);
-			return true;
-		}
-		String token = tokens.get(id);
-		int mid = token.length()/2;
-		String mezcla = token.substring(0, mid);
-		mezcla.concat(desafio);
-		mezcla.concat(token.substring(mid, token.length()));
-		return Hash.sha256(mezcla).equals(respuesta);
+		String idRemitente = usuario.leer();
+		String mensajePendiente = usuario.leer();
+		Mensaje mensaje = new Mensaje(usuario.id, idRemitente, mensajePendiente);
+		mensajesPendientes.add(mensaje);
 	}
-	
+		
 	public void start()
 	{
 		if (thread == null)
@@ -178,18 +218,6 @@ public class Servidor implements Runnable
 				e.printStackTrace();
 			}
 		});
-	}
-	
-	public void establecerConexion(Usuario llamador, Usuario llamado)
-	{
-		llamador.recibir(TipoMensaje.DATOSDECONEXION.string());
-		llamador.recibir(llamado.ip);
-		llamador.recibir(llamado.puerto);
-	}
-	
-	public void mensajePendiente(Mensaje mensaje)
-	{
-		mensajesPendientes.add(mensaje);
 	}
 	
 	public static void main(String args[])

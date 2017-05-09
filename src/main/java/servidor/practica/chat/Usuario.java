@@ -1,5 +1,6 @@
 package servidor.practica.chat;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
@@ -12,6 +13,7 @@ public class Usuario
 	public String ip;
 	public String puerto;
 	private DataOutputStream streamOut;
+	private DataInputStream streamIn;
 		
 	public Usuario(String id)
 	{
@@ -20,30 +22,36 @@ public class Usuario
 	
 	public void cierroSocket() throws IOException
 	{
-		socket.close();
 		streamOut.close();
+		streamIn.close();
+		socket.close();
 	}
 	
-	public void abroSocket(Socket socket, DataOutputStream stream)
+	public void abrirSocket(Socket socket, DataOutputStream streamOut, DataInputStream streamIn)
 	{
 		this.socket = socket;
 		this.ip = socket.getInetAddress().toString().substring(1);
-		this.streamOut = stream;
+		this.streamOut = streamOut;
+		this.streamIn = streamIn;
+	}
+	
+	public String leer() throws IOException
+	{
+		return streamIn.readUTF();
+	}
+	
+	public void escribir(String texto)
+	{
+		try {
+			streamOut.writeUTF(texto);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public Boolean soyUsuario(String id_)
 	{
 		return id.equals(id_);
-	}
-	
-	public void recibir(String mensaje)
-	{
-		try {
-			streamOut.writeUTF(mensaje);	 
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 	
 	public void recibirPendientes(ArrayList<Mensaje> mensajes)
