@@ -151,7 +151,7 @@ public class Servidor implements Runnable
 		}
 		usuario.escribir(TipoMensaje.OK.string());
 		usuario.puerto = usuario.leer(); //puerto en el que espera conexiones
-		Servidor.obj().mandarMensajesPendientes(usuario);
+		mandarMensajesPendientes(usuario);
 		return true;
 	}
 	
@@ -173,7 +173,7 @@ public class Servidor implements Runnable
 	public void comunicar(Usuario usuario) throws IOException
 	{
 		String idRemitente = usuario.leer();
-		Optional<Usuario> compañero = Servidor.obj().getUsuario(idRemitente);
+		Optional<Usuario> compañero = getUsuario(idRemitente);
 		compañero.ifPresent(llamado ->
 		{
 			usuario.escribir(TipoMensaje.DATOSDECONEXION.string());
