@@ -21,9 +21,9 @@ public class ChatServerThread extends Thread
 		System.out.println("Server Thread " + socket.getPort() + " running.");
 		try
 		{
-			String info = streamIn.readUTF();
-			String idUsuario = info.substring(0, info.indexOf(":"));
-			String puerto = info.substring(info.indexOf(":") +1, info.length());
+			String idUsuario_puerto = streamIn.readUTF();
+			String idUsuario = idUsuario_puerto.substring(0, idUsuario_puerto.indexOf(":"));
+			String puerto = idUsuario_puerto.substring(idUsuario_puerto.indexOf(":") +1, idUsuario_puerto.length());
 
 			System.out.println("Manejando al usuario de id: " + idUsuario);
 			Usuario usuario = Servidor.obj().generarUsuario(idUsuario, puerto, socket, streamOut, streamIn);
