@@ -21,9 +21,12 @@ public class ChatServerThread extends Thread
 		System.out.println("Server Thread " + socket.getPort() + " running.");
 		try
 		{
-			String idUsuario = streamIn.readUTF();
-			System.out.println("Manejando al usuario: " + idUsuario);
-			Usuario usuario = Servidor.obj().generarUsuario(idUsuario, socket, streamOut, streamIn);
+			String info = streamIn.readUTF();
+			String idUsuario = info.substring(0, info.indexOf(":"));
+			String puerto = info.substring(info.indexOf(":") +1, info.length());
+
+			System.out.println("Manejando al usuario de id: " + idUsuario);
+			Usuario usuario = Servidor.obj().generarUsuario(idUsuario, puerto, socket, streamOut, streamIn);
 			Boolean valido = Servidor.obj().autenticar(usuario);
 			if(valido == false)
 			{
@@ -34,17 +37,26 @@ public class ChatServerThread extends Thread
 			TipoMensaje tipo = null;
 			while(tipo != TipoMensaje.CIERROSOCKET)
 			{
-				tipo = TipoMensaje.values()[Integer.parseInt(streamIn.readUTF())];
+				String tipoMsj_resto = streamIn.readUTF();
+				tipo = TipoMensaje.values()[Integer.parseInt(tipoMsj_resto.substring(0, tipoMsj_resto.indexOf(":")))];
 				switch(tipo)
 				{
 					case CIERROSOCKET:
 						usuario.cierroSocket();
 						break;
 					case HABLARCON:
-						Servidor.obj().comunicar(usuario);
+						String idLlamado = tipoMsj_resto.substring(tipoMsj_resto.indexOf(":") +1, tipoMsj_resto.length());
+						Servidor.obj().comunicar(usuario, idLlamado);
 						break;
 					case MENSAJEPENDIENTE:
-						Servidor.obj().addMensajePendiente(usuario);
+						String idRemitente_texto = tipoMsj_resto.substring(tipoMsj_resto.indexOf(":") +1, tipoMsj_resto.length());
+						
+						String idRemitente = idRemitente_texto.substring(0, idRemitente_texto.indexOf(":"));
+						String texto = idRemitente_texto.substring(idRemitente_texto.indexOf(":") +1, idRemitente_texto.length());
+						
+						Mensaje msjPendiente = new Mensaje(usuario.id, idRemitente, texto);
+						
+						Servidor.obj().addMensajePendiente(msjPendiente);
 					default:
 						break;
 				}

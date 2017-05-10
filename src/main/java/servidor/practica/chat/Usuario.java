@@ -15,9 +15,10 @@ public class Usuario
 	private DataOutputStream streamOut;
 	private DataInputStream streamIn;
 		
-	public Usuario(String id)
+	public Usuario(String id, String puerto)
 	{
 		this.id = id;
+		this.puerto = puerto;
 	}
 	
 	public void cierroSocket() throws IOException
@@ -61,8 +62,8 @@ public class Usuario
 			mensajes.forEach(mensaje ->
 			{
 				try {
-					streamOut.writeUTF(mensaje.emisor);
-					streamOut.writeUTF(mensaje.mensaje);
+					String emisor_mensaje = mensaje.emisor + ":" + mensaje.mensaje;
+					streamOut.writeUTF(emisor_mensaje);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}			

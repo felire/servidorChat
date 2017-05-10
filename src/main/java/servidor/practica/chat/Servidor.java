@@ -105,7 +105,7 @@ public class Servidor implements Runnable
 		return usuarios.stream().filter(u->u.soyUsuario(id)).findFirst();
 	}
 	
-	public synchronized Usuario generarUsuario(String id, Socket socket, DataOutputStream streamOut, DataInputStream streamIn)
+	public synchronized Usuario generarUsuario(String id, String puerto, Socket socket, DataOutputStream streamOut, DataInputStream streamIn)
 	{
 		Optional<Usuario> user = getUsuario(id);
 		Usuario usuario;
@@ -115,7 +115,7 @@ public class Servidor implements Runnable
 		}
 		else
 		{
-			usuario = new Usuario(id);
+			usuario = new Usuario(id, puerto);
 			usuarios.add(usuario);
 		}
 		usuario.abrirSocket(socket, streamOut, streamIn);
@@ -132,7 +132,6 @@ public class Servidor implements Runnable
 			token = new String(decoded);
 			tokens.put(usuario.id, token);
 			usuario.escribir(TipoMensaje.OK.string());
-			usuario.puerto = usuario.leer(); //puerto en el que espera conexiones
 			return true;
 		}
 		String desafio = RandomString.generateRandomToken();
@@ -153,7 +152,6 @@ public class Servidor implements Runnable
 			return false;
 		}
 		usuario.escribir(TipoMensaje.OK.string());
-		usuario.puerto = usuario.leer(); //puerto en el que espera conexiones
 		mandarMensajesPendientes(usuario);
 		return true;
 	}
@@ -173,27 +171,22 @@ public class Servidor implements Runnable
 		usuario.recibirPendientes(mensajesPorMandar);
 	}
 	
-	public void comunicar(Usuario usuario) throws IOException
+	public void comunicar(Usuario usuario, String idRemitente) throws IOException
 	{
-		String idRemitente = usuario.leer();
 		Optional<Usuario> compañero = getUsuario(idRemitente);
 		compañero.ifPresent(llamado ->
 		{
-			usuario.escribir(TipoMensaje.DATOSDECONEXION.string());
-			usuario.escribir(llamado.ip);
-			usuario.escribir(llamado.puerto);
+			String tipoMsj_ip_puerto = TipoMensaje.DATOSDECONEXION.string() + ":" + llamado.ip + ":" + llamado.puerto;
+			usuario.escribir(tipoMsj_ip_puerto);
 		});
 		if(!compañero.isPresent())
 		{
-			usuario.escribir(TipoMensaje.NOESTADISPONIBLE.string());
+			usuario.escribir(TipoMensaje.NOESTADISPONIBLE.string() + ":");
 		}
 	}
 	
-	public void addMensajePendiente(Usuario usuario) throws IOException
+	public void addMensajePendiente(Mensaje mensaje) throws IOException
 	{
-		String idRemitente = usuario.leer();
-		String mensajePendiente = usuario.leer();
-		Mensaje mensaje = new Mensaje(usuario.id, idRemitente, mensajePendiente);
 		mensajesPendientes.add(mensaje);
 	}
 		
