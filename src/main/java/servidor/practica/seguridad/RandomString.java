@@ -1,4 +1,4 @@
-package servidor.practica.chat;
+package servidor.practica.seguridad;
 
 import java.security.SecureRandom;
 import java.util.Random;
