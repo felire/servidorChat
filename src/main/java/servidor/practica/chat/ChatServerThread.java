@@ -15,6 +15,24 @@ public class ChatServerThread extends Thread
 	{
 		this.socket = socket;
 	}
+	
+	public int indexOf(String string, char caracter)
+	{
+		int lastof = string.indexOf(caracter);
+		if(lastof == -1) return string.length();
+		else return lastof;
+	}
+	
+	public String primerSubstring(String mensaje)
+	{
+		return mensaje.substring(0, indexOf(mensaje, ':'));
+	}
+	
+	public String segundoSubstring(String mensaje)
+	{
+		if(mensaje.indexOf(':') == -1) return "";
+		return mensaje.substring(indexOf(mensaje, ':') + 1, mensaje.length());
+	}
 
 	public void run()
 	{
@@ -22,8 +40,8 @@ public class ChatServerThread extends Thread
 		try
 		{
 			String idUsuario_puerto = streamIn.readUTF();
-			String idUsuario = idUsuario_puerto.substring(0, idUsuario_puerto.indexOf(":"));
-			String puerto = idUsuario_puerto.substring(idUsuario_puerto.indexOf(":") +1, idUsuario_puerto.length());
+			String idUsuario = primerSubstring(idUsuario_puerto);
+			String puerto = segundoSubstring(idUsuario_puerto);
 
 			System.out.println("Manejando al usuario de id: " + idUsuario);
 			Usuario usuario = Servidor.obj().generarUsuario(idUsuario, puerto, socket, streamOut, streamIn);
@@ -38,24 +56,22 @@ public class ChatServerThread extends Thread
 			while(tipo != TipoMensaje.CIERROSOCKET)
 			{
 				String tipoMsj_resto = streamIn.readUTF();
-				tipo = TipoMensaje.values()[Integer.parseInt(tipoMsj_resto.substring(0, tipoMsj_resto.indexOf(":")))];
+				String tipoMsj = primerSubstring(tipoMsj_resto);
+				tipo = TipoMensaje.values()[Integer.parseInt(tipoMsj)];
 				switch(tipo)
 				{
 					case CIERROSOCKET:
 						usuario.cierroSocket();
 						break;
 					case HABLARCON:
-						String idLlamado = tipoMsj_resto.substring(tipoMsj_resto.indexOf(":") +1, tipoMsj_resto.length());
+						String idLlamado = segundoSubstring(tipoMsj_resto);
 						Servidor.obj().comunicar(usuario, idLlamado);
 						break;
 					case MENSAJEPENDIENTE:
-						String idRemitente_texto = tipoMsj_resto.substring(tipoMsj_resto.indexOf(":") +1, tipoMsj_resto.length());
-						
-						String idRemitente = idRemitente_texto.substring(0, idRemitente_texto.indexOf(":"));
-						String texto = idRemitente_texto.substring(idRemitente_texto.indexOf(":") +1, idRemitente_texto.length());
-						
+						String idRemitente_texto = segundoSubstring(tipoMsj_resto);
+						String idRemitente = primerSubstring(idRemitente_texto);
+						String texto = segundoSubstring(idRemitente_texto);
 						Mensaje msjPendiente = new Mensaje(usuario.id, idRemitente, texto);
-						
 						Servidor.obj().addMensajePendiente(msjPendiente);
 					default:
 						break;

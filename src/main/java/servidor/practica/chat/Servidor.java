@@ -99,7 +99,7 @@ public class Servidor implements Runnable
 			}
 	    }
 	}
-		
+			
 	public synchronized Optional<Usuario> getUsuario(String id)
 	{
 		return usuarios.stream().filter(u->u.soyUsuario(id)).findFirst();
