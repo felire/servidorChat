@@ -1,5 +1,6 @@
 package servidor.practica.chat;
 
+import servidor.practica.mensajes.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;

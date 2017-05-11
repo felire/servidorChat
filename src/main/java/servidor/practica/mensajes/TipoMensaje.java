@@ -1,4 +1,4 @@
-package servidor.practica.chat;
+package servidor.practica.mensajes;
 
 public enum TipoMensaje {
 	CIERROSOCKET, HABLARCON, DATOSDECONEXION, MENSAJEPENDIENTE, NOESTADISPONIBLE, OK, ERROR;

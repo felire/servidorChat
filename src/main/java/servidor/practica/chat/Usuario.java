@@ -1,5 +1,6 @@
 package servidor.practica.chat;
 
+import servidor.practica.mensajes.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -9,9 +10,8 @@ import java.util.ArrayList;
 public class Usuario 
 {
 	public String id;
-	public Socket socket;
-	public String ip;
-	public String puerto;
+	private Socket socket;
+	private String puerto;
 	private DataOutputStream streamOut;
 	private DataInputStream streamIn;
 		
@@ -19,6 +19,11 @@ public class Usuario
 	{
 		this.id = id;
 		this.puerto = puerto;
+	}
+	
+	public String datosDeConexion()
+	{
+		return socket.getInetAddress().toString().substring(1) + ":" + puerto;
 	}
 	
 	public void cierroSocket() throws IOException
@@ -31,7 +36,6 @@ public class Usuario
 	public void abrirSocket(Socket socket, DataOutputStream streamOut, DataInputStream streamIn)
 	{
 		this.socket = socket;
-		this.ip = socket.getInetAddress().toString().substring(1);
 		this.streamOut = streamOut;
 		this.streamIn = streamIn;
 	}

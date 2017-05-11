@@ -1,4 +1,4 @@
-package servidor.practica.chat;
+package servidor.practica.mensajes;
 
 public class Mensaje
 {
