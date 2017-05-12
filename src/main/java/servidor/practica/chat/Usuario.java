@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 public class Usuario 
 {
@@ -14,11 +15,13 @@ public class Usuario
 	private String puerto;
 	private DataOutputStream streamOut;
 	private DataInputStream streamIn;
+	private Logger logger;
 		
-	public Usuario(String id, String puerto)
+	public Usuario(String id, String puerto, Logger logger)
 	{
 		this.id = id;
 		this.puerto = puerto;
+		this.logger = logger;
 	}
 	
 	public String datosDeConexion()
@@ -40,9 +43,14 @@ public class Usuario
 		this.streamIn = streamIn;
 	}
 	
-	public String leer() throws IOException
+	public String leer()
 	{
-		return streamIn.readUTF();
+		try {
+			return streamIn.readUTF();
+		} catch (IOException e) {
+			logger.severe("Usuario " + id +": Fallo de lectura " + e);
+		}
+		return "Error de lectura";
 	}
 	
 	public void escribir(String texto)
@@ -50,7 +58,7 @@ public class Usuario
 		try {
 			streamOut.writeUTF(texto);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.severe("Usuario " + id +": Fallo envio del texto: " + texto + " " + e);
 		}
 	}
 	

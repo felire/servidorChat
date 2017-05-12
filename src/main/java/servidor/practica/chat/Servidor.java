@@ -134,8 +134,9 @@ public class Servidor implements Runnable
 		}
 		else
 		{
-			usuario = new Usuario(id, puerto);
+			usuario = new Usuario(id, puerto, logger);
 			usuarios.add(usuario);
+			logger.info("Server: Agrego al usuario " + id);
 		}
 		usuario.abrirSocket(socket, streamOut, streamIn);
 		return usuario;
@@ -200,7 +201,7 @@ public class Servidor implements Runnable
 		usuario.recibirPendientes(mensajesPorMandar);
 	}
 	
-	public void comunicar(Usuario usuario, String idRemitente) throws IOException
+	public void comunicar(Usuario usuario, String idRemitente)
 	{
 		Optional<Usuario> compañero = getUsuario(idRemitente);
 		compañero.ifPresent(llamado ->
