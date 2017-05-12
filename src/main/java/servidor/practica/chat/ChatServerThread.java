@@ -19,9 +19,9 @@ public class ChatServerThread extends Thread
 	
 	public int indexOf(String string, char caracter)
 	{
-		int lastof = string.indexOf(caracter);
-		if(lastof == -1) return string.length();
-		else return lastof;
+		int posicion = string.indexOf(caracter);
+		if(posicion == -1) posicion = string.length();
+		return posicion;
 	}
 	
 	public String primerSubstring(String mensaje)
@@ -40,15 +40,17 @@ public class ChatServerThread extends Thread
 		System.out.println("Server Thread " + socket.getPort() + " running.");
 		try
 		{
-			String idUsuario_puerto = streamIn.readUTF();
+			String idUsuario_puerto = streamIn.readUTF();//el usuario se identifica
 			String idUsuario = primerSubstring(idUsuario_puerto);
 			String puerto = segundoSubstring(idUsuario_puerto);
 
 			System.out.println("Manejando al usuario de id: " + idUsuario);
+			
 			Usuario usuario = Servidor.obj().generarUsuario(idUsuario, puerto, socket, streamOut, streamIn);
 			Boolean valido = Servidor.obj().autenticar(usuario);
 			if(valido == false)
 			{
+				System.out.println("Fallo de autenticacion");
 				this.close();
 				return;
 			}
@@ -56,20 +58,20 @@ public class ChatServerThread extends Thread
 			TipoMensaje tipo = null;
 			while(tipo != TipoMensaje.CIERROSOCKET)
 			{
-				String tipoMsj_resto = streamIn.readUTF();
-				String tipoMsj = primerSubstring(tipoMsj_resto);
-				tipo = TipoMensaje.values()[Integer.parseInt(tipoMsj)];
+				String header_payload = usuario.leer();
+				String header = primerSubstring(header_payload);
+				tipo = TipoMensaje.values()[Integer.parseInt(header)];
 				switch(tipo)
 				{
 					case CIERROSOCKET:
 						usuario.cierroSocket();
 						break;
 					case HABLARCON:
-						String idLlamado = segundoSubstring(tipoMsj_resto);
+						String idLlamado = segundoSubstring(header_payload);
 						Servidor.obj().comunicar(usuario, idLlamado);
 						break;
 					case MENSAJEPENDIENTE:
-						String idRemitente_texto = segundoSubstring(tipoMsj_resto);
+						String idRemitente_texto = segundoSubstring(header_payload);
 						String idRemitente = primerSubstring(idRemitente_texto);
 						String texto = segundoSubstring(idRemitente_texto);
 						Mensaje msjPendiente = new Mensaje(usuario.id, idRemitente, texto);
@@ -80,11 +82,7 @@ public class ChatServerThread extends Thread
 			}
 			return;
 		}catch(Exception ioe) {
-			try{
-				this.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			this.close();
 		}
 	}
 	
@@ -94,10 +92,15 @@ public class ChatServerThread extends Thread
 		streamOut = new DataOutputStream(socket.getOutputStream());
 	}
 	
-	public void close() throws IOException
+	public void close()
 	{
-		if (streamIn != null) streamIn.close();
-		//if (streamOut != null) streamOut.close();
+		try{
+			if (streamIn != null) streamIn.close();
+			if (streamOut != null) streamOut.close();
+			if (socket != null) socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }
 /*

@@ -61,21 +61,12 @@ public class Usuario
 	
 	public void recibirPendientes(ArrayList<Mensaje> mensajes)
 	{
-		try {
-			streamOut.writeUTF(String.valueOf(mensajes.size()));
-			mensajes.forEach(mensaje ->
-			{
-				try {
-					String emisor_mensaje = mensaje.emisor + ":" + mensaje.mensaje;
-					streamOut.writeUTF(emisor_mensaje);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}			
-			});	 
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
+		escribir(String.valueOf(mensajes.size()));
+		mensajes.forEach(mensaje ->
+		{
+			String emisor_mensaje = mensaje.emisor + ":" + mensaje.mensaje;
+			escribir(emisor_mensaje);		
+		});	 
 	}
 }
 /*

@@ -94,14 +94,10 @@ public class Servidor implements Runnable
 	    {
 	    	System.out.println("Error opening thread: " + ioe);
 	    	chats.remove(peticionCliente);
-	    	try {
-				peticionCliente.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+	    	peticionCliente.close();
 	    }
 	}
-
+	
 	public synchronized Optional<Usuario> getUsuario(String id)
 	{
 		return usuarios.stream().filter(usuario->usuario.soy(id)).findFirst();
@@ -134,14 +130,20 @@ public class Servidor implements Runnable
 		return Hash.sha256(mezcla);
 	}
 	
+	private String decodeToken(String tokenBase64)
+	{
+		byte[] bytesencoded = tokenBase64.getBytes();
+		byte[] decoded = Base64.getDecoder().decode(bytesencoded);
+		return new String(decoded);
+	}
+	
 	public Boolean autenticar(Usuario usuario) throws Exception
 	{
 		String token;
 		if(tokens.containsKey(usuario.id) == false)//primera vez que se conecta
 		{
-			String tokenBase64 = usuario.leer();
-			byte[] decoded = Base64.getDecoder().decode(tokenBase64.getBytes());
-			token = new String(decoded);
+			String tokenBase64 = usuario.leer();//manda su token encodeado en base 64
+			token = decodeToken(tokenBase64);
 			tokens.put(usuario.id, token);
 			usuario.escribir(TipoMensaje.OK.string());
 			return true;
@@ -187,7 +189,7 @@ public class Servidor implements Runnable
 		});
 		if(!compañero.isPresent())
 		{
-			usuario.escribir(TipoMensaje.NOESTADISPONIBLE.string() + ":");
+			usuario.escribir(TipoMensaje.NOESTADISPONIBLE.string());
 		}
 	}
 	
@@ -195,7 +197,7 @@ public class Servidor implements Runnable
 	{
 		mensajesPendientes.add(mensaje);
 	}
-		
+	
 	public void start()
 	{
 		if (thread == null)
@@ -214,11 +216,7 @@ public class Servidor implements Runnable
 	    }
 		chats.forEach(chat -> 
 		{
-			try {
-				chat.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			chat.close();
 		});
 	}
 	
