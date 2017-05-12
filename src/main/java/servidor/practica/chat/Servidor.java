@@ -1,17 +1,23 @@
 package servidor.practica.chat;
 
-import servidor.practica.seguridad.*;
-import servidor.practica.mensajes.*;
+import servidor.practica.mensajes.Mensaje;
+import servidor.practica.mensajes.TipoMensaje;
+import servidor.practica.seguridad.Hash;
+import servidor.practica.seguridad.RandomString;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.Base64;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class Servidor implements Runnable
 {
@@ -22,6 +28,7 @@ public class Servidor implements Runnable
 	private List<ChatServerThread> chats;
 	private List<Mensaje> mensajesPendientes;
 	private HashMap<String, String> tokens;
+	private Logger logger;
 	
 	public Servidor(int puerto)
 	{
@@ -30,15 +37,29 @@ public class Servidor implements Runnable
 		mensajesPendientes = new ArrayList<Mensaje>();
 		tokens = new HashMap<String, String>();
 		thread = null;
+		logger = Logger.getLogger("MyLog");  
+	    FileHandler fh;
+	    try { 
+	        fh = new FileHandler("/tmp/server/logFile.log");  
+	        logger.addHandler(fh);
+	        SimpleFormatter formatter = new SimpleFormatter();  
+	        fh.setFormatter(formatter);
+	    } catch (SecurityException e) {  
+	        e.printStackTrace();  
+	    } catch (IOException e) {
+	        e.printStackTrace();  
+	    }
+	    logger.setLevel(Level.INFO);
+	    //logger.setUseParentHandlers(false); //para que no aparezca nada en la consola
 		try 
 		{
 			socketS = new ServerSocket(puerto);
-			System.out.println("Arranca server..");
+			logger.info("Arranca el server..");
 			this.start();
 		}
 		catch (IOException e) 
 		{
-			System.out.println("Error al crear serverSocket" + e);
+			logger.severe("Server: Error al crear serverSocket" + e);
 		}
 	}
 	
@@ -60,13 +81,13 @@ public class Servidor implements Runnable
 		}
 		catch (IOException e) 
 		{
-			System.out.println("Error " + e);
+			logger.severe("Server: Error al cambiar el puerto del server: " + e);
 		}
 	}
 		
 	public void run()
 	{
-		System.out.println("Waiting for clients ..."); 
+		logger.info("Server: Waiting for clients ...");
 		while (thread != null)
 		{
 			try
@@ -75,15 +96,15 @@ public class Servidor implements Runnable
 	        }
 	        catch(IOException ie)
 	        {  
-	        	System.out.println("Acceptance Error: " + ie);
+	        	logger.warning("Server: Error al aceptar conexion al server socket: " + ie);
 	        }
 	    }
 	}
 	
 	private void addThread(Socket socket)
 	{
-		System.out.println("Client accepted: " + socket);
-		ChatServerThread peticionCliente = new ChatServerThread(socket);
+		logger.info("Server: Client accepted: " + socket);
+		ChatServerThread peticionCliente = new ChatServerThread(socket, logger);
 		chats.add(peticionCliente);
 	    try
 	    {
@@ -92,7 +113,7 @@ public class Servidor implements Runnable
 	    }
 	    catch(IOException ioe)
 	    {
-	    	System.out.println("Error opening thread: " + ioe);
+	    	logger.warning("Server: Error al abrir thread" + ioe);
 	    	chats.remove(peticionCliente);
 	    	peticionCliente.close();
 	    }
@@ -113,8 +134,9 @@ public class Servidor implements Runnable
 		}
 		else
 		{
-			usuario = new Usuario(id, puerto);
+			usuario = new Usuario(id, puerto, logger);
 			usuarios.add(usuario);
+			logger.info("Server: Agrego al usuario " + id);
 		}
 		usuario.abrirSocket(socket, streamOut, streamIn);
 		return usuario;
@@ -179,7 +201,7 @@ public class Servidor implements Runnable
 		usuario.recibirPendientes(mensajesPorMandar);
 	}
 	
-	public void comunicar(Usuario usuario, String idRemitente) throws IOException
+	public void comunicar(Usuario usuario, String idRemitente)
 	{
 		Optional<Usuario> compañero = getUsuario(idRemitente);
 		compañero.ifPresent(llamado ->
