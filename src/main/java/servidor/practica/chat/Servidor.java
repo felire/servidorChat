@@ -9,6 +9,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.NoSuchFileException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -40,7 +41,12 @@ public class Servidor implements Runnable
 		logger = Logger.getLogger("MyLog");  
 	    FileHandler fh;
 	    try { 
-	        fh = new FileHandler("/tmp/server/logFile.log");  
+	    	try{
+	    		fh = new FileHandler("/tmp/server/logFile.log");  
+	    	} catch (NoSuchFileException e){
+	    		System.out.println("Cree el archivo de logs: /tmp/server/logFile.log");
+	    		return;
+	    	}
 	        logger.addHandler(fh);
 	        SimpleFormatter formatter = new SimpleFormatter();  
 	        fh.setFormatter(formatter);
@@ -59,7 +65,7 @@ public class Servidor implements Runnable
 		}
 		catch (IOException e) 
 		{
-			logger.severe("Server: Error al crear serverSocket" + e);
+			log(Level.SEVERE,"Error al crear serverSocket" + e);
 		}
 	}
 	
@@ -81,13 +87,13 @@ public class Servidor implements Runnable
 		}
 		catch (IOException e) 
 		{
-			logger.severe("Server: Error al cambiar el puerto del server: " + e);
+			log(Level.SEVERE, "Error al cambiar el puerto del server: " + e);
 		}
 	}
 		
 	public void run()
 	{
-		logger.info("Server: Waiting for clients ...");
+		log(Level.INFO, "Waiting for clients ...");
 		while (thread != null)
 		{
 			try
@@ -96,14 +102,14 @@ public class Servidor implements Runnable
 	        }
 	        catch(IOException ie)
 	        {  
-	        	logger.warning("Server: Error al aceptar conexion al server socket: " + ie);
+	        	log(Level.WARNING, "Error al aceptar conexion al server socket: " + ie);
 	        }
 	    }
 	}
 	
 	private void addThread(Socket socket)
 	{
-		logger.info("Server: Client accepted: " + socket);
+		log(Level.INFO, "Client accepted: " + socket);
 		ChatServerThread peticionCliente = new ChatServerThread(socket, logger);
 		chats.add(peticionCliente);
 	    try
@@ -113,13 +119,18 @@ public class Servidor implements Runnable
 	    }
 	    catch(IOException ioe)
 	    {
-	    	logger.warning("Server: Error al abrir thread" + ioe);
+	    	log(Level.WARNING, "Error al abrir thread" + ioe);
 	    	chats.remove(peticionCliente);
 	    	peticionCliente.close();
 	    }
 	}
 	
-	public synchronized Optional<Usuario> getUsuario(String id)
+	private void log(Level nivel, String msg)
+	{
+		logger.log(nivel, "Server: " + msg);
+	}
+	
+	private synchronized Optional<Usuario> getUsuario(String id)
 	{
 		return usuarios.stream().filter(usuario->usuario.soy(id)).findFirst();
 	}
@@ -136,7 +147,7 @@ public class Servidor implements Runnable
 		{
 			usuario = new Usuario(id, puerto, logger);
 			usuarios.add(usuario);
-			logger.info("Server: Agrego al usuario " + id);
+			log(Level.INFO,"Agrego al usuario " + id);
 		}
 		usuario.abrirSocket(socket, streamOut, streamIn);
 		return usuario;
@@ -178,6 +189,7 @@ public class Servidor implements Runnable
 		Boolean autenticado = respuestaEsperada.equals(respuestaUsuario);
 		if(autenticado == false)
 		{
+			log(Level.SEVERE, "Fallo de autenticacion, usuario: " + usuario.id + ". Se esperaba: " + respuestaEsperada + " y se obtuvo: " + respuestaUsuario);
 			usuario.escribir(TipoMensaje.ERROR.string());
 			return false;
 		}
@@ -211,6 +223,7 @@ public class Servidor implements Runnable
 		});
 		if(!compañero.isPresent())
 		{
+			log(Level.WARNING, "Se intento contactar al usuario de id: " + idRemitente + " y este no existe");
 			usuario.escribir(TipoMensaje.NOESTADISPONIBLE.string());
 		}
 	}

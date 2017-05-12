@@ -1,10 +1,12 @@
 package servidor.practica.chat;
 
-import servidor.practica.mensajes.*;
+import servidor.practica.mensajes.Mensaje;
+import servidor.practica.mensajes.TipoMensaje;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ChatServerThread extends Thread
@@ -27,33 +29,36 @@ public class ChatServerThread extends Thread
 		return posicion;
 	}
 	
-	public String primerSubstring(String mensaje)
+	private String primerSubstring(String mensaje)
 	{
 		return mensaje.substring(0, indexOf(mensaje, ':'));
 	}
 	
-	public String segundoSubstring(String mensaje)
+	private String segundoSubstring(String mensaje)
 	{
 		if(mensaje.indexOf(':') == -1) return "";
 		return mensaje.substring(indexOf(mensaje, ':') + 1, mensaje.length());
 	}
+	
+	private void log(Level nivel, String msg)
+	{
+		logger.log(nivel, "ChatServerThread " + socket.getPort() + ": " + msg);
+	}
 
 	public void run()
 	{
-		logger.info("Server Thread " + socket.getPort() + " running.");
 		try
 		{
 			String idUsuario_puerto = streamIn.readUTF();//el usuario se identifica
 			String idUsuario = primerSubstring(idUsuario_puerto);
 			String puerto = segundoSubstring(idUsuario_puerto);
 
-			logger.info(socket.getPort() + ": Manejando al usuario de id: " + idUsuario);
+			log(Level.INFO, "Manejando al usuario: " + idUsuario);
 			
 			Usuario usuario = Servidor.obj().generarUsuario(idUsuario, puerto, socket, streamOut, streamIn);
 			Boolean valido = Servidor.obj().autenticar(usuario);
 			if(valido == false)
 			{
-				logger.warning(socket.getPort() + ": Fallo de autenticacion, id: " + idUsuario);
 				this.close();
 				return;
 			}
@@ -83,10 +88,10 @@ public class ChatServerThread extends Thread
 						break;
 				}
 			}
-			logger.info("Server Thread " + socket.getPort() + " finished.");
+			log(Level.INFO, "Terminado.");
 			return;
 		}catch(Exception ioe) {
-			logger.warning(socket.getPort() + ": Error manejando usuario " + socket +  " " + ioe);
+			log(Level.WARNING, "Error manejando usuario " + socket +  " " + ioe);
 			this.close();
 		}
 	}
@@ -99,13 +104,13 @@ public class ChatServerThread extends Thread
 	
 	public void close()
 	{
-		logger.info(socket.getPort() + ": Cerrando ChatServerThread");
+		log(Level.INFO, "Close() invocado.");
 		try{
 			if (streamIn != null) streamIn.close();
 			if (streamOut != null) streamOut.close();
 			if (socket != null) socket.close();
 		} catch (IOException e) {
-			logger.warning(socket.getPort() + ": Error al cerrar el ChatServerThread" + e);
+			log(Level.WARNING, "Error al cerrar el ChatServerThread" + e);
 		}
 	}
 }

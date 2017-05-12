@@ -1,11 +1,12 @@
 package servidor.practica.chat;
 
-import servidor.practica.mensajes.*;
+import servidor.practica.mensajes.Mensaje;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Usuario 
@@ -43,12 +44,17 @@ public class Usuario
 		this.streamIn = streamIn;
 	}
 	
+	private void log(Level nivel, String msg)
+	{
+		logger.log(nivel, "Usuario " + id + ": " + msg);
+	}
+	
 	public String leer()
 	{
 		try {
 			return streamIn.readUTF();
 		} catch (IOException e) {
-			logger.severe("Usuario " + id +": Fallo de lectura " + e);
+			log(Level.SEVERE, "Fallo de lectura " + e);
 		}
 		return "Error de lectura";
 	}
@@ -58,7 +64,7 @@ public class Usuario
 		try {
 			streamOut.writeUTF(texto);
 		} catch (IOException e) {
-			logger.severe("Usuario " + id +": Fallo envio del texto: " + texto + " " + e);
+			log(Level.SEVERE, "Fallo envio del texto: " + texto + " " + e);
 		}
 	}
 	
