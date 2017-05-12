@@ -42,7 +42,7 @@ public class ChatServerThread extends Thread
 	
 	private void log(Level nivel, String msg)
 	{
-		logger.log(nivel, "ChatServerThread " + socket.getPort() + ": " + msg);
+		logger.log(nivel, socket.getPort() + ": " + msg);
 	}
 
 	public void run()

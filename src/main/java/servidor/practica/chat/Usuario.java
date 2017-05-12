@@ -46,7 +46,7 @@ public class Usuario
 	
 	private void log(Level nivel, String msg)
 	{
-		logger.log(nivel, "Usuario " + id + ": " + msg);
+		logger.log(nivel, id + ": " + msg);
 	}
 	
 	public String leer()

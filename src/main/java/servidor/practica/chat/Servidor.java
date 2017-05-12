@@ -42,9 +42,9 @@ public class Servidor implements Runnable
 	    FileHandler fh;
 	    try { 
 	    	try{
-	    		fh = new FileHandler("/tmp/server/logFile.log");  
+	    		fh = new FileHandler("/tmp/logFile.log");  
 	    	} catch (NoSuchFileException e){
-	    		System.out.println("Cree el archivo de logs: /tmp/server/logFile.log");
+	    		System.out.println("No se pudo abrir el archivo de logs: /tmp/logFile.log");
 	    		return;
 	    	}
 	        logger.addHandler(fh);
@@ -127,7 +127,7 @@ public class Servidor implements Runnable
 	
 	private void log(Level nivel, String msg)
 	{
-		logger.log(nivel, "Server: " + msg);
+		logger.log(nivel, msg);
 	}
 	
 	private synchronized Optional<Usuario> getUsuario(String id)
