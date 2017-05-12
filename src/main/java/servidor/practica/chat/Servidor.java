@@ -101,10 +101,10 @@ public class Servidor implements Runnable
 			}
 	    }
 	}
-			
+
 	public synchronized Optional<Usuario> getUsuario(String id)
 	{
-		return usuarios.stream().filter(u->u.soyUsuario(id)).findFirst();
+		return usuarios.stream().filter(usuario->usuario.soy(id)).findFirst();
 	}
 	
 	public synchronized Usuario generarUsuario(String id, String puerto, Socket socket, DataOutputStream streamOut, DataInputStream streamIn)
@@ -124,6 +124,16 @@ public class Servidor implements Runnable
 		return usuario;
 	}
 	
+	private String resolverDesafio(Usuario usuario, String desafio) throws Exception
+	{
+		String token = tokens.get(usuario.id);
+		int mid = token.length()/2;
+		String mezcla = token.substring(0, mid);
+		mezcla.concat(desafio);
+		mezcla.concat(token.substring(mid, token.length()));
+		return Hash.sha256(mezcla);
+	}
+	
 	public Boolean autenticar(Usuario usuario) throws Exception
 	{
 		String token;
@@ -137,17 +147,11 @@ public class Servidor implements Runnable
 			return true;
 		}
 		String desafio = RandomString.generateRandomToken();
-
-		token = tokens.get(usuario.id);
-		int mid = token.length()/2;
-		String mezcla = token.substring(0, mid);
-		mezcla.concat(desafio);
-		mezcla.concat(token.substring(mid, token.length()));
-		
 		usuario.escribir(desafio);	
-		String respuesta = usuario.leer();
+		String respuestaUsuario = usuario.leer();
+		String respuestaEsperada = resolverDesafio(usuario, desafio);
 		
-		Boolean autenticado = Hash.sha256(mezcla).equals(respuesta);
+		Boolean autenticado = respuestaEsperada.equals(respuestaUsuario);
 		if(autenticado == false)
 		{
 			usuario.escribir(TipoMensaje.ERROR.string());
@@ -223,3 +227,11 @@ public class Servidor implements Runnable
 		Servidor.obj().start();
 	}
 }
+/*
+ * El Servidor hace de repositorio de clientes, se encarga de autenticarlos, de guardar y mandar los
+ * mensajes pendientes y de pasar los datos de conexion para que los clientes puedan comunicarse entre si
+ */
+
+
+
+

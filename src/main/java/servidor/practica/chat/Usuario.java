@@ -54,7 +54,7 @@ public class Usuario
 		}
 	}
 	
-	public Boolean soyUsuario(String id_)
+	public Boolean soy(String id_)
 	{
 		return id.equals(id_);
 	}
@@ -78,3 +78,9 @@ public class Usuario
 		}
 	}
 }
+/*
+ * El usuario tiene el socket para comunicarse con el cliente,
+ * sabe recibir una lista de mensajes y enviarla.
+ * Tambien guarda la informacion necesaria para que otros clientes
+ * se puedan comunicar con el.
+ */
