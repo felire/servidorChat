@@ -132,8 +132,8 @@ public class Servidor implements Runnable
 	
 	private String decodeToken(String tokenBase64)
 	{
-		byte[] bytesencoded = tokenBase64.getBytes();
-		byte[] decoded = Base64.getDecoder().decode(bytesencoded);
+		byte[] encoded = tokenBase64.getBytes();
+		byte[] decoded = Base64.getDecoder().decode(encoded);
 		return new String(decoded);
 	}
 	
