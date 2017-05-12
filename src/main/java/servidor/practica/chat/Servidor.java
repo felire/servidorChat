@@ -231,7 +231,3 @@ public class Servidor implements Runnable
  * El Servidor hace de repositorio de clientes, se encarga de autenticarlos, de guardar y mandar los
  * mensajes pendientes y de pasar los datos de conexion para que los clientes puedan comunicarse entre si
  */
-
-
-
-
