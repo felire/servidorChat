@@ -4,6 +4,7 @@ import servidor.practica.mensajes.Mensaje;
 import servidor.practica.mensajes.TipoMensaje;
 import servidor.practica.seguridad.Hash;
 import servidor.practica.seguridad.RandomString;
+import servidor.practica.seguridad.AES;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -255,9 +256,15 @@ public class Servidor implements Runnable
 		});
 	}
 	
-	public static void main(String args[])
+	public static void main(String args[]) throws Exception
 	{
-		Servidor.obj().start();
+		//Servidor.obj().start();
+		String plain = "Este es el texto que queremos encriptar";
+		byte [] rta = AES.encriptar("pepitooooooooooo", plain);  //16
+		System.out.println(rta);
+		String pplain = AES.desencriptar("pepitooooooooooo", rta);
+		System.out.println(pplain);
+		
 	}
 }
 /*
