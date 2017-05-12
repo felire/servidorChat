@@ -5,16 +5,19 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.logging.Logger;
 
 public class ChatServerThread extends Thread
 {
 	private DataInputStream streamIn =  null;
 	private DataOutputStream streamOut = null;
 	private Socket socket;
+	private Logger logger;
 	
-	public ChatServerThread(Socket socket)
+	public ChatServerThread(Socket socket, Logger logger)
 	{
 		this.socket = socket;
+		this.logger = logger;
 	}
 	
 	public int indexOf(String string, char caracter)
@@ -37,20 +40,20 @@ public class ChatServerThread extends Thread
 
 	public void run()
 	{
-		System.out.println("Server Thread " + socket.getPort() + " running.");
+		logger.info("Server Thread " + socket.getPort() + " running.");
 		try
 		{
 			String idUsuario_puerto = streamIn.readUTF();//el usuario se identifica
 			String idUsuario = primerSubstring(idUsuario_puerto);
 			String puerto = segundoSubstring(idUsuario_puerto);
 
-			System.out.println("Manejando al usuario de id: " + idUsuario);
+			logger.info(socket.getPort() + ": Manejando al usuario de id: " + idUsuario);
 			
 			Usuario usuario = Servidor.obj().generarUsuario(idUsuario, puerto, socket, streamOut, streamIn);
 			Boolean valido = Servidor.obj().autenticar(usuario);
 			if(valido == false)
 			{
-				System.out.println("Fallo de autenticacion");
+				logger.warning(socket.getPort() + ": Fallo de autenticacion, id: " + idUsuario);
 				this.close();
 				return;
 			}
@@ -80,8 +83,10 @@ public class ChatServerThread extends Thread
 						break;
 				}
 			}
+			logger.info("Server Thread " + socket.getPort() + " finished.");
 			return;
 		}catch(Exception ioe) {
+			logger.warning(socket.getPort() + ": Error manejando usuario " + socket +  " " + ioe);
 			this.close();
 		}
 	}
@@ -94,12 +99,13 @@ public class ChatServerThread extends Thread
 	
 	public void close()
 	{
+		logger.info(socket.getPort() + ": Cerrando ChatServerThread");
 		try{
 			if (streamIn != null) streamIn.close();
 			if (streamOut != null) streamOut.close();
 			if (socket != null) socket.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.warning(socket.getPort() + ": Error al cerrar el ChatServerThread" + e);
 		}
 	}
 }
