@@ -3,6 +3,7 @@ package servidor.practica.chat;
 import servidor.practica.mensajes.Mensaje;
 import servidor.practica.mensajes.TipoMensaje;
 import servidor.practica.seguridad.Hash;
+import servidor.practica.seguridad.RSA;
 import servidor.practica.seguridad.RandomString;
 import servidor.practica.seguridad.AES;
 import java.io.DataInputStream;
@@ -11,6 +12,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.NoSuchFileException;
+import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -31,6 +33,7 @@ public class Servidor implements Runnable
 	private List<Mensaje> mensajesPendientes;
 	private HashMap<String, String> tokens;
 	private Logger logger;
+	private KeyPair keyPair;
 	
 	public Servidor(int puerto)
 	{
@@ -39,6 +42,7 @@ public class Servidor implements Runnable
 		mensajesPendientes = new ArrayList<Mensaje>();
 		tokens = new HashMap<String, String>();
 		thread = null;
+		keyPair = RSA.generateKeyPair();
 		logger = Logger.getLogger("MyLog");  
 	    FileHandler fh;
 	    try { 
@@ -259,12 +263,17 @@ public class Servidor implements Runnable
 	public static void main(String args[]) throws Exception
 	{
 		//Servidor.obj().start();
+		/*
 		String plain = "Este es el texto que queremos encriptar";
-		byte [] rta = AES.encriptar("pepitooooooooooo", plain);  //16
-		System.out.println(rta);
-		String pplain = AES.desencriptar("pepitooooooooooo", rta);
+		byte [] rta = AES.encriptar("pepito", plain);
+		String pplain = AES.desencriptar("pepito", rta);
 		System.out.println(pplain);
-		
+		*/
+		KeyPair keyPair = RSA.generateKeyPair();
+		String texto = "texto a encriptar =D";
+		byte [] en = RSA.encrypt(texto, keyPair.getPublic());
+		String rta = RSA.decrypt(en, keyPair.getPrivate());
+		System.out.println(rta);
 	}
 }
 /*

@@ -80,7 +80,7 @@ public class Usuario
 		{
 			String emisor_mensaje = mensaje.emisor + ":" + mensaje.mensaje;
 			escribir(emisor_mensaje);		
-		});	 
+		});
 	}
 }
 /*
