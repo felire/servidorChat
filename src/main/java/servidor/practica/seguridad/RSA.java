@@ -2,6 +2,8 @@ package servidor.practica.seguridad;
 
 import javax.crypto.Cipher;
 import java.security.*;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 /**
  * Created by Gabriel Wittes on 3/15/2016.
@@ -31,7 +33,7 @@ public class RSA
      * @param key a public RSA key
      * @return ciphertext
      */
-    public static byte[] encrypt(String plaintext, PublicKey key)
+    public static String encrypt(String plaintext, PublicKey key)
     {
         byte[] ciphertext = null;
         try {
@@ -42,7 +44,8 @@ public class RSA
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return ciphertext;
+        byte[] cipherEncoded = Base64.getEncoder().encode(ciphertext);
+        return new String(cipherEncoded);
     }
 
     /**
@@ -51,7 +54,8 @@ public class RSA
      * @param key a private RSA key
      * @return plaintext
      */
-    public static String decrypt(byte[] ciphertext, PrivateKey key){
+    public static String decrypt(String text, PrivateKey key){
+    	byte[] ciphertext = Base64.getDecoder().decode((text.getBytes()));
         byte[] plaintext = null;
         try {
             Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
@@ -62,4 +66,29 @@ public class RSA
         }
         return new String(plaintext);
     }
+	
+    public static String savePublicKey(PublicKey publ) throws GeneralSecurityException {
+        KeyFactory fact = KeyFactory.getInstance("RSA");
+        X509EncodedKeySpec spec = fact.getKeySpec(publ, X509EncodedKeySpec.class);
+        byte[] tokenBase64 = Base64.getEncoder().encode(spec.getEncoded());
+        return new String(tokenBase64);
+    }
+	
+	public static PublicKey loadPublicKey(String stored) throws GeneralSecurityException 
+    {
+		byte[] data = Base64.getDecoder().decode((stored.getBytes()));
+		X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
+		KeyFactory fact = KeyFactory.getInstance("RSA");
+		return fact.generatePublic(spec);
+     }
 }
+
+
+
+
+
+
+
+
+
+

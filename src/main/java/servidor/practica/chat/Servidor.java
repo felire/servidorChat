@@ -13,6 +13,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.NoSuchFileException;
 import java.security.KeyPair;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -167,21 +168,16 @@ public class Servidor implements Runnable
 		mezcla.concat(token.substring(mid, token.length()));
 		return Hash.sha256(mezcla);
 	}
-	
-	private String decodeToken(String tokenBase64)
-	{
-		byte[] encoded = tokenBase64.getBytes();
-		byte[] decoded = Base64.getDecoder().decode(encoded);
-		return new String(decoded);
-	}
-	
+		
 	public Boolean autenticar(Usuario usuario) throws Exception
 	{
 		String token;
 		if(tokens.containsKey(usuario.id) == false)//primera vez que se conecta
 		{
-			String tokenBase64 = usuario.leer();//manda su token encodeado en base 64
-			token = decodeToken(tokenBase64);
+			String publica = RSA.savePublicKey(keyPair.getPublic());
+			usuario.escribir(publica);		
+			String tokenEncriptado = usuario.leer();
+			token = RSA.decrypt(tokenEncriptado, keyPair.getPrivate());
 			tokens.put(usuario.id, token);
 			usuario.escribir(TipoMensaje.OK.string());
 			return true;
@@ -262,18 +258,24 @@ public class Servidor implements Runnable
 	
 	public static void main(String args[]) throws Exception
 	{
-		//Servidor.obj().start();
+//		KeyPair keyPair = RSA.generateKeyPair();
+//		String k = RSA.savePublicKey(keyPair.getPublic());
+//		PublicKey kk = RSA.loadPublicKey(k);
+
+		Servidor.obj().start();
 		/*
 		String plain = "Este es el texto que queremos encriptar";
 		byte [] rta = AES.encriptar("pepito", plain);
 		String pplain = AES.desencriptar("pepito", rta);
 		System.out.println(pplain);
 		*/
+		/*
 		KeyPair keyPair = RSA.generateKeyPair();
 		String texto = "texto a encriptar =D";
 		byte [] en = RSA.encrypt(texto, keyPair.getPublic());
 		String rta = RSA.decrypt(en, keyPair.getPrivate());
 		System.out.println(rta);
+		*/
 	}
 }
 /*
