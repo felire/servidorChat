@@ -1,6 +1,7 @@
 package servidor.practica.chat;
 
 import servidor.practica.mensajes.Mensaje;
+import servidor.practica.seguridad.AES;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -9,20 +10,33 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * El usuario tiene el socket para comunicarse con el cliente,
+ * sabe recibir una lista de mensajes y enviarla.
+ * Tambien guarda la informacion necesaria para que otros clientes
+ * se puedan comunicar con el.
+ */
+
 public class Usuario 
 {
 	public String id;
 	private Socket socket;
 	private String puerto;
-	private DataOutputStream streamOut;
-	private DataInputStream streamIn;
+	public DataOutputStream streamOut;
+	public DataInputStream streamIn;
 	private Logger logger;
-		
+	private String token;
+
 	public Usuario(String id, String puerto, Logger logger)
 	{
 		this.id = id;
 		this.puerto = puerto;
 		this.logger = logger;
+	}
+	
+	public void setToken(String token)
+	{
+		this.token = token;
 	}
 	
 	public String datosDeConexion()
@@ -52,18 +66,22 @@ public class Usuario
 	public String leer()
 	{
 		try {
-			return streamIn.readUTF();
-		} catch (IOException e) {
+			String ciphertext = streamIn.readUTF();
+			System.out.println("user " + id + " nos mando " + AES.desencriptar(token, ciphertext));
+			return AES.desencriptar(token, ciphertext);
+		} catch (Exception e) {
 			log(Level.SEVERE, "Fallo de lectura " + e);
 		}
-		return "Error de lectura";
+		return null;
 	}
 	
 	public void escribir(String texto)
 	{
 		try {
-			streamOut.writeUTF(texto);
-		} catch (IOException e) {
+			String ciphertext = AES.encriptar(token, texto);
+			System.out.println("user " + id + " le mandamos " + texto);
+			streamOut.writeUTF(ciphertext);
+		} catch (Exception e) {
 			log(Level.SEVERE, "Fallo envio del texto: " + texto + " " + e);
 		}
 	}
@@ -80,12 +98,7 @@ public class Usuario
 		{
 			String emisor_mensaje = mensaje.emisor + ":" + mensaje.mensaje;
 			escribir(emisor_mensaje);		
-		});	 
+		});
 	}
 }
-/*
- * El usuario tiene el socket para comunicarse con el cliente,
- * sabe recibir una lista de mensajes y enviarla.
- * Tambien guarda la informacion necesaria para que otros clientes
- * se puedan comunicar con el.
- */
+

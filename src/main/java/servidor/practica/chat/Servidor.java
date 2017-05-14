@@ -3,6 +3,7 @@ package servidor.practica.chat;
 import servidor.practica.mensajes.Mensaje;
 import servidor.practica.mensajes.TipoMensaje;
 import servidor.practica.seguridad.Hash;
+import servidor.practica.seguridad.RSA;
 import servidor.practica.seguridad.RandomString;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -10,8 +11,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.NoSuchFileException;
+import java.security.KeyPair;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,11 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+
+/**
+ * El Servidor hace de repositorio de clientes, se encarga de autenticarlos, de guardar y mandar los
+ * mensajes pendientes y de pasar los datos de conexion para que los clientes puedan comunicarse entre si
+ */
 
 public class Servidor implements Runnable
 {
@@ -30,6 +36,7 @@ public class Servidor implements Runnable
 	private List<Mensaje> mensajesPendientes;
 	private HashMap<String, String> tokens;
 	private Logger logger;
+	private KeyPair keyPair;
 	
 	public Servidor(int puerto)
 	{
@@ -38,6 +45,7 @@ public class Servidor implements Runnable
 		mensajesPendientes = new ArrayList<Mensaje>();
 		tokens = new HashMap<String, String>();
 		thread = null;
+		keyPair = RSA.generateKeyPair();
 		logger = Logger.getLogger("MyLog");  
 	    FileHandler fh;
 	    try { 
@@ -60,7 +68,7 @@ public class Servidor implements Runnable
 		try 
 		{
 			socketS = new ServerSocket(puerto);
-			logger.info("Arranca el server..");
+			log(Level.INFO, "Arranca el server..");
 			this.start();
 		}
 		catch (IOException e) 
@@ -152,48 +160,45 @@ public class Servidor implements Runnable
 		usuario.abrirSocket(socket, streamOut, streamIn);
 		return usuario;
 	}
-	
+	/**
+	 * mandamos el desafio encriptado con el token del usuario con AES128, el lo decripta
+	 * y lo encripta con la clave publica del server, despues le hace el sha256 y lo envia encriptado
+	 * con el toquen con AES128. Se puede hacer de muchas maneras esto, la idea es que solo el usuario
+	 * real pueda resolver el desafio.
+	 */
 	private String resolverDesafio(Usuario usuario, String desafio) throws Exception
 	{
-		String token = tokens.get(usuario.id);
-		int mid = token.length()/2;
-		String mezcla = token.substring(0, mid);
-		mezcla.concat(desafio);
-		mezcla.concat(token.substring(mid, token.length()));
-		return Hash.sha256(mezcla);
+		String respuesta = RSA.encrypt(desafio, keyPair.getPublic());
+		return Hash.sha256(respuesta);
 	}
-	
-	private String decodeToken(String tokenBase64)
-	{
-		byte[] encoded = tokenBase64.getBytes();
-		byte[] decoded = Base64.getDecoder().decode(encoded);
-		return new String(decoded);
-	}
-	
+		
 	public Boolean autenticar(Usuario usuario) throws Exception
 	{
-		String token;
-		if(tokens.containsKey(usuario.id) == false)//primera vez que se conecta
+		String token;		
+		if(tokens.containsKey(usuario.id))
 		{
-			String tokenBase64 = usuario.leer();//manda su token encodeado en base 64
-			token = decodeToken(tokenBase64);
+			String desafio = RandomString.generateRandomToken();
+			usuario.escribir(desafio);
+			String respuestaUsuario = usuario.leer();
+			String respuestaEsperada = resolverDesafio(usuario, desafio);
+			
+			Boolean autenticado = respuestaEsperada.equals(respuestaUsuario);
+			if(autenticado == false)
+			{
+				log(Level.SEVERE, "Fallo de autenticacion, usuario: " + usuario.id + ". Se esperaba: " + respuestaEsperada + " y se obtuvo: " + respuestaUsuario);
+				return false;
+			}
+			System.out.println("usuario " + usuario.id + " autenticado");
+		}
+		else//primera vez que se conecta
+		{
+			String publica = RSA.savePublicKey(keyPair.getPublic());//le pasamos la clave publica
+			usuario.streamOut.writeUTF(publica);
+			String tokenEncriptado = usuario.streamIn.readUTF();
+			token = RSA.decrypt(tokenEncriptado, keyPair.getPrivate());
 			tokens.put(usuario.id, token);
-			usuario.escribir(TipoMensaje.OK.string());
-			return true;
+			usuario.setToken(token);
 		}
-		String desafio = RandomString.generateRandomToken();
-		usuario.escribir(desafio);	
-		String respuestaUsuario = usuario.leer();
-		String respuestaEsperada = resolverDesafio(usuario, desafio);
-		
-		Boolean autenticado = respuestaEsperada.equals(respuestaUsuario);
-		if(autenticado == false)
-		{
-			log(Level.SEVERE, "Fallo de autenticacion, usuario: " + usuario.id + ". Se esperaba: " + respuestaEsperada + " y se obtuvo: " + respuestaUsuario);
-			usuario.escribir(TipoMensaje.ERROR.string());
-			return false;
-		}
-		usuario.escribir(TipoMensaje.OK.string());
 		mandarMensajesPendientes(usuario);
 		return true;
 	}
@@ -211,6 +216,7 @@ public class Servidor implements Runnable
 			return false;
 		});
 		usuario.recibirPendientes(mensajesPorMandar);
+		usuario.escribir(TipoMensaje.OK.string());
 	}
 	
 	public void comunicar(Usuario usuario, String idRemitente)
@@ -223,7 +229,7 @@ public class Servidor implements Runnable
 		});
 		if(!compañero.isPresent())
 		{
-			log(Level.WARNING, "Se intento contactar al usuario de id: " + idRemitente + " y este no existe");
+			log(Level.SEVERE, "Se intento contactar al usuario de id: " + idRemitente + " y este no existe");
 			usuario.escribir(TipoMensaje.NOESTADISPONIBLE.string());
 		}
 	}
@@ -255,12 +261,8 @@ public class Servidor implements Runnable
 		});
 	}
 	
-	public static void main(String args[])
+	public static void main(String args[]) throws Exception
 	{
 		Servidor.obj().start();
 	}
 }
-/*
- * El Servidor hace de repositorio de clientes, se encarga de autenticarlos, de guardar y mandar los
- * mensajes pendientes y de pasar los datos de conexion para que los clientes puedan comunicarse entre si
- */
