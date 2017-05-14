@@ -72,6 +72,7 @@ public class ChatServerThread extends Thread
 				switch(tipo)
 				{
 					case CIERROSOCKET:
+						usuario.escribir(TipoMensaje.OK.string());
 						usuario.cierroSocket();
 						break;
 					case HABLARCON:

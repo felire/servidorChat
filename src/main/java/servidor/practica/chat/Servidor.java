@@ -66,7 +66,7 @@ public class Servidor implements Runnable
 		try 
 		{
 			socketS = new ServerSocket(puerto);
-			logger.info("Arranca el server..");
+			log(Level.INFO, "Arranca el server..");
 			this.start();
 		}
 		catch (IOException e) 
@@ -174,27 +174,30 @@ public class Servidor implements Runnable
 		String token;
 		if(tokens.containsKey(usuario.id) == false)//primera vez que se conecta
 		{
-			String publica = RSA.savePublicKey(keyPair.getPublic());
-			usuario.escribir(publica);		
-			String tokenEncriptado = usuario.leer();
+			String publica = RSA.savePublicKey(keyPair.getPublic());//le pasamos la clave publica
+			usuario.streamOut.writeUTF(publica);
+			String tokenEncriptado = usuario.streamIn.readUTF();
 			token = RSA.decrypt(tokenEncriptado, keyPair.getPrivate());
 			tokens.put(usuario.id, token);
-			usuario.escribir(TipoMensaje.OK.string());
+			usuario.setToken(token);
+			usuario.streamOut.writeUTF(TipoMensaje.OK.string());
 			return true;
 		}
 		String desafio = RandomString.generateRandomToken();
-		usuario.escribir(desafio);	
-		String respuestaUsuario = usuario.leer();
+		usuario.streamOut.writeUTF(desafio);
+		String respuestaUsuario = usuario.streamIn.readUTF();
 		String respuestaEsperada = resolverDesafio(usuario, desafio);
 		
 		Boolean autenticado = respuestaEsperada.equals(respuestaUsuario);
 		if(autenticado == false)
 		{
 			log(Level.SEVERE, "Fallo de autenticacion, usuario: " + usuario.id + ". Se esperaba: " + respuestaEsperada + " y se obtuvo: " + respuestaUsuario);
-			usuario.escribir(TipoMensaje.ERROR.string());
+			System.out.println("usuario " + usuario.id + " fallola autenticacion");
+			usuario.streamOut.writeUTF(TipoMensaje.ERROR.string());
 			return false;
 		}
-		usuario.escribir(TipoMensaje.OK.string());
+		System.out.println("usuario " + usuario.id + " autenticado");
+		usuario.streamOut.writeUTF(TipoMensaje.OK.string());
 		mandarMensajesPendientes(usuario);
 		return true;
 	}
@@ -212,6 +215,7 @@ public class Servidor implements Runnable
 			return false;
 		});
 		usuario.recibirPendientes(mensajesPorMandar);
+		usuario.escribir(TipoMensaje.OK.string());
 	}
 	
 	public void comunicar(Usuario usuario, String idRemitente)
@@ -258,24 +262,18 @@ public class Servidor implements Runnable
 	
 	public static void main(String args[]) throws Exception
 	{
-//		KeyPair keyPair = RSA.generateKeyPair();
-//		String k = RSA.savePublicKey(keyPair.getPublic());
-//		PublicKey kk = RSA.loadPublicKey(k);
-
 		Servidor.obj().start();
-		/*
-		String plain = "Este es el texto que queremos encriptar";
-		byte [] rta = AES.encriptar("pepito", plain);
-		String pplain = AES.desencriptar("pepito", rta);
-		System.out.println(pplain);
-		*/
-		/*
-		KeyPair keyPair = RSA.generateKeyPair();
-		String texto = "texto a encriptar =D";
-		byte [] en = RSA.encrypt(texto, keyPair.getPublic());
-		String rta = RSA.decrypt(en, keyPair.getPrivate());
-		System.out.println(rta);
-		*/
+//		String testo = "mi texto secreto";
+//		String en = AES.encriptar("pepito", testo);
+//		String de = AES.desencriptar("pepito", en);
+//		if(de.equals(testo))
+//		{
+//			System.out.println("yeeep");
+//		}
+//		else
+//		{
+//			System.out.println("nooope");
+//		}
 	}
 }
 /*
