@@ -22,8 +22,8 @@ public class Usuario
 	public String id;
 	private Socket socket;
 	private String puerto;
-	public DataOutputStream streamOut;
-	public DataInputStream streamIn;
+	private DataOutputStream streamOut;
+	private DataInputStream streamIn;
 	private Logger logger;
 	private String token;
 
@@ -32,11 +32,17 @@ public class Usuario
 		this.id = id;
 		this.puerto = puerto;
 		this.logger = logger;
+		this.token = null;
+	}
+	
+	public Boolean tieneToken()
+	{
+		return (token != null);
 	}
 	
 	public void setToken(String token)
 	{
-		this.token = token;
+		if(this.token == null) this.token = token;
 	}
 	
 	public String datosDeConexion()
@@ -67,20 +73,32 @@ public class Usuario
 	{
 		try {
 			String ciphertext = streamIn.readUTF();
-			System.out.println("user " + id + " nos mando " + AES.desencriptar(token, ciphertext));
-			return AES.desencriptar(token, ciphertext);
+			if(this.token == null)
+			{
+				return ciphertext;
+			}
+			else
+			{
+				return AES.desencriptar(token, ciphertext);
+			}
 		} catch (Exception e) {
-			log(Level.SEVERE, "Fallo de lectura " + e);
+			log(Level.WARNING, "Fallo de lectura " + e);
+			return null;
 		}
-		return null;
 	}
 	
 	public void escribir(String texto)
 	{
 		try {
-			String ciphertext = AES.encriptar(token, texto);
-			System.out.println("user " + id + " le mandamos " + texto);
-			streamOut.writeUTF(ciphertext);
+			if(this.token == null)
+			{
+				streamOut.writeUTF(texto);
+			}
+			else
+			{
+				String ciphertext = AES.encriptar(token, texto);
+				streamOut.writeUTF(ciphertext);
+			}
 		} catch (Exception e) {
 			log(Level.SEVERE, "Fallo envio del texto: " + texto + " " + e);
 		}

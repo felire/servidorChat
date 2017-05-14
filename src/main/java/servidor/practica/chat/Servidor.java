@@ -13,7 +13,6 @@ import java.net.Socket;
 import java.nio.file.NoSuchFileException;
 import java.security.KeyPair;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.FileHandler;
@@ -34,7 +33,6 @@ public class Servidor implements Runnable
 	private Thread thread;
 	private List<ChatServerThread> chats;
 	private List<Mensaje> mensajesPendientes;
-	private HashMap<String, String> tokens;
 	private Logger logger;
 	private KeyPair keyPair;
 	
@@ -43,7 +41,6 @@ public class Servidor implements Runnable
 		usuarios = new ArrayList<Usuario>();
 		chats = new ArrayList<ChatServerThread>();
 		mensajesPendientes = new ArrayList<Mensaje>();
-		tokens = new HashMap<String, String>();
 		thread = null;
 		keyPair = RSA.generateKeyPair();
 		logger = Logger.getLogger("MyLog");  
@@ -175,7 +172,7 @@ public class Servidor implements Runnable
 	public Boolean autenticar(Usuario usuario) throws Exception
 	{
 		String token;		
-		if(tokens.containsKey(usuario.id))
+		if(usuario.tieneToken())
 		{
 			String desafio = RandomString.generateRandomToken();
 			usuario.escribir(desafio);
@@ -193,10 +190,9 @@ public class Servidor implements Runnable
 		else//primera vez que se conecta
 		{
 			String publica = RSA.savePublicKey(keyPair.getPublic());//le pasamos la clave publica
-			usuario.streamOut.writeUTF(publica);
-			String tokenEncriptado = usuario.streamIn.readUTF();
+			usuario.escribir(publica);
+			String tokenEncriptado = usuario.leer();
 			token = RSA.decrypt(tokenEncriptado, keyPair.getPrivate());
-			tokens.put(usuario.id, token);
 			usuario.setToken(token);
 		}
 		mandarMensajesPendientes(usuario);
@@ -216,7 +212,6 @@ public class Servidor implements Runnable
 			return false;
 		});
 		usuario.recibirPendientes(mensajesPorMandar);
-		usuario.escribir(TipoMensaje.OK.string());
 	}
 	
 	public void comunicar(Usuario usuario, String idRemitente)
