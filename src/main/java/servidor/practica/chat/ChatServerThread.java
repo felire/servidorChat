@@ -9,6 +9,15 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ *El ChatServerThread se encarga de recibir las request del cliente y enviarselas al servidor,
+ *una vez que el cliente termina, el hilo se cierra inmediatamente para causar el minimo
+ *overhead posible al server.
+ *Antes de aceptar sus pedidos, le pide al servidor que verifique que el usuario es quien dice ser.
+ *El usuario puede mandar mas de un dato de informacion por mensaje, los distintos fragmentos estan
+ *separados por ':' y se manejan con los metodos primerSubstring y segundoSubstring.
+ */
+
 public class ChatServerThread extends Thread
 {
 	private DataInputStream streamIn =  null;
@@ -72,7 +81,6 @@ public class ChatServerThread extends Thread
 				switch(tipo)
 				{
 					case CIERROSOCKET:
-						usuario.escribir(TipoMensaje.OK.string());
 						usuario.cierroSocket();
 						break;
 					case HABLARCON:
@@ -115,11 +123,3 @@ public class ChatServerThread extends Thread
 		}
 	}
 }
-/*
- *El ChatServerThread se encarga de recibir las request del cliente y enviarselas al servidor,
- *una vez que el cliente termina, el hilo se cierra inmediatamente para causar el minimo
- *overhead posible al server.
- *Antes de aceptar sus pedidos, le pide al servidor que verifique que el usuario es quien dice ser.
- *El usuario puede mandar mas de un dato de informacion por mensaje, los distintos fragmentos estan
- *separados por ':' y se manejan con los metodos primerSubstring y segundoSubstring.
- */

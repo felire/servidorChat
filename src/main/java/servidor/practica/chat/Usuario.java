@@ -2,7 +2,6 @@ package servidor.practica.chat;
 
 import servidor.practica.mensajes.Mensaje;
 import servidor.practica.seguridad.AES;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -10,6 +9,13 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+/**
+ * El usuario tiene el socket para comunicarse con el cliente,
+ * sabe recibir una lista de mensajes y enviarla.
+ * Tambien guarda la informacion necesaria para que otros clientes
+ * se puedan comunicar con el.
+ */
 
 public class Usuario 
 {
@@ -95,9 +101,4 @@ public class Usuario
 		});
 	}
 }
-/*
- * El usuario tiene el socket para comunicarse con el cliente,
- * sabe recibir una lista de mensajes y enviarla.
- * Tambien guarda la informacion necesaria para que otros clientes
- * se puedan comunicar con el.
- */
+

@@ -5,7 +5,6 @@ import servidor.practica.mensajes.TipoMensaje;
 import servidor.practica.seguridad.Hash;
 import servidor.practica.seguridad.RSA;
 import servidor.practica.seguridad.RandomString;
-import servidor.practica.seguridad.AES;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -13,9 +12,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.NoSuchFileException;
 import java.security.KeyPair;
-import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +20,11 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+
+/**
+ * El Servidor hace de repositorio de clientes, se encarga de autenticarlos, de guardar y mandar los
+ * mensajes pendientes y de pasar los datos de conexion para que los clientes puedan comunicarse entre si
+ */
 
 public class Servidor implements Runnable
 {
@@ -171,8 +173,23 @@ public class Servidor implements Runnable
 		
 	public Boolean autenticar(Usuario usuario) throws Exception
 	{
-		String token;
-		if(tokens.containsKey(usuario.id) == false)//primera vez que se conecta
+		String token;		
+		if(tokens.containsKey(usuario.id))
+		{
+			String desafio = RandomString.generateRandomToken();
+			usuario.streamOut.writeUTF(desafio);
+			String respuestaUsuario = usuario.streamIn.readUTF();
+			String respuestaEsperada = resolverDesafio(usuario, desafio);
+			
+			Boolean autenticado = respuestaEsperada.equals(respuestaUsuario);
+			if(autenticado == false)
+			{
+				log(Level.SEVERE, "Fallo de autenticacion, usuario: " + usuario.id + ". Se esperaba: " + respuestaEsperada + " y se obtuvo: " + respuestaUsuario);
+				return false;
+			}
+			System.out.println("usuario " + usuario.id + " autenticado");
+		}
+		else//primera vez que se conecta
 		{
 			String publica = RSA.savePublicKey(keyPair.getPublic());//le pasamos la clave publica
 			usuario.streamOut.writeUTF(publica);
@@ -180,24 +197,7 @@ public class Servidor implements Runnable
 			token = RSA.decrypt(tokenEncriptado, keyPair.getPrivate());
 			tokens.put(usuario.id, token);
 			usuario.setToken(token);
-			usuario.streamOut.writeUTF(TipoMensaje.OK.string());
-			return true;
 		}
-		String desafio = RandomString.generateRandomToken();
-		usuario.streamOut.writeUTF(desafio);
-		String respuestaUsuario = usuario.streamIn.readUTF();
-		String respuestaEsperada = resolverDesafio(usuario, desafio);
-		
-		Boolean autenticado = respuestaEsperada.equals(respuestaUsuario);
-		if(autenticado == false)
-		{
-			log(Level.SEVERE, "Fallo de autenticacion, usuario: " + usuario.id + ". Se esperaba: " + respuestaEsperada + " y se obtuvo: " + respuestaUsuario);
-			System.out.println("usuario " + usuario.id + " fallola autenticacion");
-			usuario.streamOut.writeUTF(TipoMensaje.ERROR.string());
-			return false;
-		}
-		System.out.println("usuario " + usuario.id + " autenticado");
-		usuario.streamOut.writeUTF(TipoMensaje.OK.string());
 		mandarMensajesPendientes(usuario);
 		return true;
 	}
@@ -228,7 +228,7 @@ public class Servidor implements Runnable
 		});
 		if(!compañero.isPresent())
 		{
-			log(Level.WARNING, "Se intento contactar al usuario de id: " + idRemitente + " y este no existe");
+			log(Level.SEVERE, "Se intento contactar al usuario de id: " + idRemitente + " y este no existe");
 			usuario.escribir(TipoMensaje.NOESTADISPONIBLE.string());
 		}
 	}
@@ -263,20 +263,5 @@ public class Servidor implements Runnable
 	public static void main(String args[]) throws Exception
 	{
 		Servidor.obj().start();
-//		String testo = "mi texto secreto";
-//		String en = AES.encriptar("pepito", testo);
-//		String de = AES.desencriptar("pepito", en);
-//		if(de.equals(testo))
-//		{
-//			System.out.println("yeeep");
-//		}
-//		else
-//		{
-//			System.out.println("nooope");
-//		}
 	}
 }
-/*
- * El Servidor hace de repositorio de clientes, se encarga de autenticarlos, de guardar y mandar los
- * mensajes pendientes y de pasar los datos de conexion para que los clientes puedan comunicarse entre si
- */
