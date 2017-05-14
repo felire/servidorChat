@@ -160,15 +160,16 @@ public class Servidor implements Runnable
 		usuario.abrirSocket(socket, streamOut, streamIn);
 		return usuario;
 	}
-	
+	/**
+	 * mandamos el desafio encriptado con el token del usuario con AES128, el lo decripta
+	 * y lo encripta con la clave publica del server, despues le hace el sha256 y lo envia encriptado
+	 * con el toquen con AES128. Se puede hacer de muchas maneras esto, la idea es que solo el usuario
+	 * real pueda resolver el desafio.
+	 */
 	private String resolverDesafio(Usuario usuario, String desafio) throws Exception
 	{
-		String token = tokens.get(usuario.id);
-		int mid = token.length()/2;
-		String mezcla = token.substring(0, mid);
-		mezcla.concat(desafio);
-		mezcla.concat(token.substring(mid, token.length()));
-		return Hash.sha256(mezcla);
+		String respuesta = RSA.encrypt(desafio, keyPair.getPublic());
+		return Hash.sha256(respuesta);
 	}
 		
 	public Boolean autenticar(Usuario usuario) throws Exception
@@ -177,8 +178,8 @@ public class Servidor implements Runnable
 		if(tokens.containsKey(usuario.id))
 		{
 			String desafio = RandomString.generateRandomToken();
-			usuario.streamOut.writeUTF(desafio);
-			String respuestaUsuario = usuario.streamIn.readUTF();
+			usuario.escribir(desafio);
+			String respuestaUsuario = usuario.leer();
 			String respuestaEsperada = resolverDesafio(usuario, desafio);
 			
 			Boolean autenticado = respuestaEsperada.equals(respuestaUsuario);
