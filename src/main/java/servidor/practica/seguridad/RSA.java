@@ -37,7 +37,6 @@ public class RSA
     {
         byte[] ciphertext = null;
         try {
-            //Cipher cipher = Cipher.getInstance("RSA/ECB/OASP");
         	Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding");
             cipher.init(Cipher.ENCRYPT_MODE, key);
             ciphertext = cipher.doFinal(plaintext.getBytes());
