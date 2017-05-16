@@ -30,19 +30,25 @@ public class ChatServerThread extends Thread
 		this.socket = socket;
 		this.logger = logger;
 	}
-	
+	/**
+	 * manejo de strings recibidos por el usuario
+	 */
 	public int indexOf(String string, char caracter)
 	{
 		int posicion = string.indexOf(caracter);
 		if(posicion == -1) posicion = string.length();
 		return posicion;
 	}
-	
+	/**
+	 * manejo de strings recibidos por el usuario
+	 */
 	private String primerSubstring(String mensaje)
 	{
 		return mensaje.substring(0, indexOf(mensaje, ':'));
 	}
-	
+	/**
+	 * manejo de strings recibidos por el usuario
+	 */
 	private String segundoSubstring(String mensaje)
 	{
 		if(mensaje.indexOf(':') == -1) return "";
@@ -62,7 +68,7 @@ public class ChatServerThread extends Thread
 			String idUsuario = primerSubstring(idUsuario_puerto);
 			String puerto = segundoSubstring(idUsuario_puerto);
 
-			log(Level.INFO, "Manejando al usuario: " + idUsuario);
+			log(Level.FINE, "Manejando al usuario: " + idUsuario);
 			
 			Usuario usuario = Servidor.obj().generarUsuario(idUsuario, puerto, socket, streamOut, streamIn);
 			Boolean valido = Servidor.obj().autenticar(usuario);
@@ -73,14 +79,14 @@ public class ChatServerThread extends Thread
 			}
 			
 			TipoMensaje tipo = null;
-			while(tipo != TipoMensaje.CIERROSOCKET)
+			while(tipo != TipoMensaje.CIERROCONEXION)
 			{
 				String header_payload = usuario.leer();
 				String header = primerSubstring(header_payload);
 				tipo = TipoMensaje.values()[Integer.parseInt(header)];
 				switch(tipo)
 				{
-					case CIERROSOCKET:
+					case CIERROCONEXION:
 						usuario.cierroSocket();
 						break;
 					case HABLARCON:

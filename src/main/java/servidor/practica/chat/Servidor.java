@@ -98,7 +98,7 @@ public class Servidor implements Runnable
 		
 	public void run()
 	{
-		log(Level.INFO, "Waiting for clients ...");
+		log(Level.FINE, "Waiting for clients ...");
 		while (thread != null)
 		{
 			try
@@ -114,7 +114,7 @@ public class Servidor implements Runnable
 	
 	private void addThread(Socket socket)
 	{
-		log(Level.INFO, "Client accepted: " + socket);
+		log(Level.FINE, "Client accepted: " + socket);
 		ChatServerThread peticionCliente = new ChatServerThread(socket, logger);
 		chats.add(peticionCliente);
 	    try
