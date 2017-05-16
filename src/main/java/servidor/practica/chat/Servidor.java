@@ -170,8 +170,7 @@ public class Servidor implements Runnable
 	}
 		
 	public Boolean autenticar(Usuario usuario) throws Exception
-	{
-		String token;		
+	{	
 		if(usuario.tieneToken())
 		{
 			String desafio = RandomString.generateRandomToken();
@@ -185,14 +184,13 @@ public class Servidor implements Runnable
 				log(Level.SEVERE, "Fallo de autenticacion, usuario: " + usuario.id + ". Se esperaba: " + respuestaEsperada + " y se obtuvo: " + respuestaUsuario);
 				return false;
 			}
-			System.out.println("usuario " + usuario.id + " autenticado");
 		}
 		else//primera vez que se conecta
 		{
 			String publica = RSA.savePublicKey(keyPair.getPublic());//le pasamos la clave publica
 			usuario.escribir(publica);
 			String tokenEncriptado = usuario.leer();
-			token = RSA.decrypt(tokenEncriptado, keyPair.getPrivate());
+			String token = RSA.decrypt(tokenEncriptado, keyPair.getPrivate());
 			usuario.setToken(token);
 		}
 		mandarMensajesPendientes(usuario);
@@ -201,17 +199,17 @@ public class Servidor implements Runnable
 	
 	private void mandarMensajesPendientes(Usuario usuario)
 	{
-		ArrayList<Mensaje> mensajesPorMandar = new ArrayList<Mensaje>();
+		ArrayList<Mensaje> pendientes = new ArrayList<Mensaje>();
 		mensajesPendientes.removeIf(msj -> 
 		{
-			if(msj.receptor.equals(usuario.id))
+			if(msj.esPara(usuario))
 			{
-				mensajesPorMandar.add(msj);
+				pendientes.add(msj);
 				return true;
 			}
-			return false;
+			else return false;
 		});
-		usuario.recibirPendientes(mensajesPorMandar);
+		usuario.recibirPendientes(pendientes);
 	}
 	
 	public void comunicar(Usuario usuario, String idRemitente)

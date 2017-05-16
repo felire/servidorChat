@@ -42,7 +42,7 @@ public class Usuario
 	
 	public void setToken(String token)
 	{
-		if(this.token == null) this.token = token;
+		if(this.token == null) this.token = token; //nunca sobre escribimos el token
 	}
 	
 	public String datosDeConexion()
@@ -72,14 +72,14 @@ public class Usuario
 	public String leer()
 	{
 		try {
-			String ciphertext = streamIn.readUTF();
+			String mensaje = streamIn.readUTF();
 			if(this.token == null)
 			{
-				return ciphertext;
+				return mensaje;
 			}
 			else
 			{
-				return AES.desencriptar(token, ciphertext);
+				return AES.desencriptar(token, mensaje);
 			}
 		} catch (Exception e) {
 			log(Level.WARNING, "Fallo de lectura " + e);
@@ -111,11 +111,11 @@ public class Usuario
 	
 	public void recibirPendientes(ArrayList<Mensaje> mensajes)
 	{
-		escribir(String.valueOf(mensajes.size()));
+		String cantidad = String.valueOf(mensajes.size());
+		escribir(cantidad);
 		mensajes.forEach(mensaje ->
 		{
-			String emisor_mensaje = mensaje.emisor + ":" + mensaje.mensaje;
-			escribir(emisor_mensaje);		
+			escribir(mensaje.contenido());		
 		});
 	}
 }
