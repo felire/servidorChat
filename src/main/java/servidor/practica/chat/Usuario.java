@@ -1,6 +1,7 @@
 package servidor.practica.chat;
 
 import servidor.practica.mensajes.Mensaje;
+import servidor.practica.mensajes.TipoMensaje;
 import servidor.practica.seguridad.AES;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -47,7 +48,7 @@ public class Usuario
 	
 	public String datosDeConexion()
 	{
-		return socket.getInetAddress().toString().substring(1) + ":" + puerto;
+		return TipoMensaje.DATOSDECONEXION.string() + ":" + socket.getInetAddress().toString().substring(1) + ":" + puerto;
 	}
 	
 	public void cierroSocket() throws IOException
@@ -75,10 +76,12 @@ public class Usuario
 			String mensaje = streamIn.readUTF();
 			if(this.token == null)
 			{
+				log(Level.FINEST, "El usuario " + id + " nos mando: " + mensaje);
 				return mensaje;
 			}
 			else
 			{
+				log(Level.FINEST, "El usuario " + id + " nos mando: " + AES.desencriptar(token, mensaje));
 				return AES.desencriptar(token, mensaje);
 			}
 		} catch (Exception e) {
@@ -99,6 +102,7 @@ public class Usuario
 				String ciphertext = AES.encriptar(token, texto);
 				streamOut.writeUTF(ciphertext);
 			}
+			log(Level.FINEST, "Le mandamos al usuario " + id + " " + texto);
 		} catch (Exception e) {
 			log(Level.SEVERE, "Fallo envio del texto: " + texto + " " + e);
 		}

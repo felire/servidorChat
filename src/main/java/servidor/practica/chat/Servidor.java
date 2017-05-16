@@ -70,7 +70,7 @@ public class Servidor implements Runnable
 		}
 		catch (IOException e) 
 		{
-			log(Level.SEVERE,"Error al crear serverSocket" + e);
+			log(Level.SEVERE,"Error al crear serverSocket " + e);
 		}
 	}
 	
@@ -170,7 +170,7 @@ public class Servidor implements Runnable
 	}
 		
 	public Boolean autenticar(Usuario usuario) throws Exception
-	{	
+	{
 		if(usuario.tieneToken())
 		{
 			String desafio = RandomString.generateRandomToken();
@@ -217,8 +217,8 @@ public class Servidor implements Runnable
 		Optional<Usuario> compañero = getUsuario(idRemitente);
 		compañero.ifPresent(llamado ->
 		{
-			String tipoMsj_ip_puerto = TipoMensaje.DATOSDECONEXION.string() + ":" + llamado.datosDeConexion();
-			usuario.escribir(tipoMsj_ip_puerto);
+			String datosDeConexion = llamado.datosDeConexion();
+			usuario.escribir(datosDeConexion);
 		});
 		if(!compañero.isPresent())
 		{
