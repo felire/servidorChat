@@ -8,9 +8,9 @@ public class Mensaje
 	private String receptor;
 	private String mensaje;
 	
-	public Mensaje(String emisor, String receptor, String mensaje)
+	public Mensaje(Usuario emisor, String receptor, String mensaje)
 	{
-		this.emisor = emisor;
+		this.emisor = emisor.id;
 		this.receptor = receptor;
 		this.mensaje = mensaje;
 	}

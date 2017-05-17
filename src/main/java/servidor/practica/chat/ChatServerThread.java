@@ -60,6 +60,10 @@ public class ChatServerThread extends Thread
 		logger.log(nivel, socket.getPort() + ": " + msg);
 	}
 
+	/**
+	 * Recibe los pedidos del usuario y llama los metodos correspondientes del servidor.
+	 * Los mensajes del usuario suelen tener mas de un dato, estos estan separados por ":"
+	 */
 	public void run()
 	{
 		try
@@ -97,13 +101,13 @@ public class ChatServerThread extends Thread
 						String idRemitente_texto = segundoSubstring(header_payload);
 						String idRemitente = primerSubstring(idRemitente_texto);
 						String texto = segundoSubstring(idRemitente_texto);
-						Mensaje msjPendiente = new Mensaje(usuario.id, idRemitente, texto);
+						Mensaje msjPendiente = new Mensaje(usuario, idRemitente, texto);
 						Servidor.obj().addMensajePendiente(msjPendiente);
 					default:
 						break;
 				}
 			}
-			log(Level.INFO, "Terminado.");
+			log(Level.FINE, "Terminado.");
 			return;
 		}catch(Exception ioe) {
 			log(Level.WARNING, "Error manejando usuario " + socket +  " " + ioe);
