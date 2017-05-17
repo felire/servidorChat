@@ -72,18 +72,15 @@ public class Usuario
 	
 	public String leer()
 	{
+		String mensaje;
 		try {
-			String mensaje = streamIn.readUTF();
-			if(this.token == null)
+			mensaje = streamIn.readUTF();
+			if(this.tieneToken())
 			{
-				log(Level.FINEST, "El usuario " + id + " nos mando: " + mensaje);
-				return mensaje;
+				mensaje = AES.desencriptar(token, mensaje);
 			}
-			else
-			{
-				log(Level.FINEST, "El usuario " + id + " nos mando: " + AES.desencriptar(token, mensaje));
-				return AES.desencriptar(token, mensaje);
-			}
+			log(Level.FINEST, "El usuario " + id + " nos mando: " + mensaje);
+			return mensaje;
 		} catch (Exception e) {
 			log(Level.WARNING, "Fallo de lectura " + e);
 			return null;
@@ -93,18 +90,14 @@ public class Usuario
 	public void escribir(String texto)
 	{
 		try {
-			if(this.token == null)
-			{
-				streamOut.writeUTF(texto);
-			}
-			else
-			{
-				String ciphertext = AES.encriptar(token, texto);
-				streamOut.writeUTF(ciphertext);
-			}
 			log(Level.FINEST, "Le mandamos al usuario " + id + " " + texto);
+			if(this.tieneToken())
+			{
+				texto = AES.encriptar(token, texto);
+			}
+			streamOut.writeUTF(texto);
 		} catch (Exception e) {
-			log(Level.SEVERE, "Fallo envio del texto: " + texto + " " + e);
+			log(Level.WARNING, "Fallo envio del texto: " + texto + " " + e);
 		}
 	}
 	
