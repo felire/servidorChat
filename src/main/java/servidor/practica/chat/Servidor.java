@@ -31,7 +31,6 @@ public class Servidor implements Runnable
 	private static Servidor obj = null;
 	private ServerSocket socketS;
 	private Thread thread;
-	private List<ChatServerThread> chats;
 	private List<Mensaje> mensajesPendientes;
 	private Logger logger;
 	private KeyPair keyPair;
@@ -39,7 +38,6 @@ public class Servidor implements Runnable
 	public Servidor(int puerto)
 	{
 		usuarios = new ArrayList<Usuario>();
-		chats = new ArrayList<ChatServerThread>();
 		mensajesPendientes = new ArrayList<Mensaje>();
 		thread = null;
 		keyPair = RSA.generateKeyPair();
@@ -102,21 +100,20 @@ public class Servidor implements Runnable
 		while (thread != null)
 		{
 			try
-	        {  
-	            this.addThread(socketS.accept());
-	        }
-	        catch(IOException ie)
-	        {  
-	        	log(Level.WARNING, "Error al aceptar conexion al server socket: " + ie);
-	        }
-	    }
+			{
+				this.addThread(socketS.accept());
+			}
+			catch(IOException ie)
+			{
+				log(Level.WARNING, "Error al aceptar conexion al server socket: " + ie);
+			}
+		}
 	}
 	
 	private void addThread(Socket socket)
 	{
 		log(Level.FINE, "Client accepted: " + socket);
 		ChatServerThread peticionCliente = new ChatServerThread(socket, logger);
-		chats.add(peticionCliente);
 	    try
 	    {
 	    	peticionCliente.open();
@@ -125,7 +122,6 @@ public class Servidor implements Runnable
 	    catch(IOException ioe)
 	    {
 	    	log(Level.WARNING, "Error al abrir thread" + ioe);
-	    	chats.remove(peticionCliente);
 	    	peticionCliente.close();
 	    }
 	}
@@ -248,10 +244,6 @@ public class Servidor implements Runnable
 			thread.interrupt();
 	        thread = null;
 	    }
-		chats.forEach(chat -> 
-		{
-			chat.close();
-		});
 	}
 	
 	public static void main(String args[]) throws Exception
