@@ -136,7 +136,7 @@ public class Servidor implements Runnable
 		return usuarios.stream().filter(usuario->usuario.soy(id)).findFirst();
 	}
 	
-	public synchronized Usuario generarUsuario(String id, String puerto, Socket socket, DataOutputStream streamOut, DataInputStream streamIn)
+	public Usuario generarUsuario(String id, String puerto, Socket socket, DataOutputStream streamOut, DataInputStream streamIn)
 	{
 		Optional<Usuario> user = getUsuario(id);
 		Usuario usuario;
@@ -147,12 +147,16 @@ public class Servidor implements Runnable
 		else
 		{
 			usuario = new Usuario(id, puerto, logger);
-			usuarios.add(usuario);
+			synchronized(this)
+			{
+				usuarios.add(usuario);
+			}
 			log(Level.INFO,"Agrego al usuario " + id);
 		}
 		usuario.abrirSocket(socket, streamOut, streamIn);
 		return usuario;
 	}
+	
 	/**
 	 * mandamos el desafio encriptado con el token del usuario con AES128, el lo decripta
 	 * y lo encripta con la clave publica del server, despues le hace el sha256 y lo envia encriptado
