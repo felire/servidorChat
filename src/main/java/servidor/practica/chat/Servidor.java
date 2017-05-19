@@ -19,6 +19,8 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import java.util.concurrent.Semaphore;
+
 
 /**
  * El Servidor hace de repositorio de clientes, se encarga de autenticarlos, de guardar y mandar los
@@ -34,12 +36,18 @@ public class Servidor implements Runnable
 	private List<Mensaje> mensajesPendientes;
 	private Logger logger;
 	private KeyPair keyPair;
+	private Semaphore semClientes;
+	private Semaphore semLogger;
+	private Semaphore semMensajesPendientes;
 	
 	public Servidor(int puerto)
 	{
 		usuarios = new ArrayList<Usuario>();
 		mensajesPendientes = new ArrayList<Mensaje>();
 		thread = null;
+		semClientes = new Semaphore(1);
+		semLogger = new Semaphore(1);
+		semMensajesPendientes = new Semaphore(1);
 		keyPair = RSA.generateKeyPair();
 		logger = Logger.getLogger("MyLog");  
 	    FileHandler fh;
@@ -128,12 +136,25 @@ public class Servidor implements Runnable
 	
 	private void log(Level nivel, String msg)
 	{
+		try {
+			semLogger.acquire();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				}
 		logger.log(nivel, msg);
+		semLogger.release();
 	}
 	
-	private synchronized Optional<Usuario> getUsuario(String id)
+	private Optional<Usuario> getUsuario(String id)
 	{
-		return usuarios.stream().filter(usuario->usuario.soy(id)).findFirst();
+		try {
+			semClientes.acquire();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				}
+		Optional<Usuario> op = usuarios.stream().filter(usuario->usuario.soy(id)).findFirst();
+		semClientes.release();
+		return op;
 	}
 	
 	public Usuario generarUsuario(String id, String puerto, Socket socket, DataOutputStream streamOut, DataInputStream streamIn)
@@ -146,11 +167,14 @@ public class Servidor implements Runnable
 		}
 		else
 		{
-			usuario = new Usuario(id, puerto, logger);
-			synchronized(this)
-			{
-				usuarios.add(usuario);
-			}
+			usuario = new Usuario(id, puerto, logger, semLogger);
+			try {
+				semClientes.acquire();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					}
+			usuarios.add(usuario);
+			semClientes.release();
 			log(Level.INFO,"Agrego al usuario " + id);
 		}
 		usuario.abrirSocket(socket, streamOut, streamIn);
@@ -200,6 +224,11 @@ public class Servidor implements Runnable
 	private void mandarMensajesPendientes(Usuario usuario)
 	{
 		ArrayList<Mensaje> pendientes = new ArrayList<Mensaje>();
+		try {
+			semMensajesPendientes.acquire();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				}
 		mensajesPendientes.removeIf(msj -> 
 		{
 			if(msj.esPara(usuario))
@@ -209,6 +238,7 @@ public class Servidor implements Runnable
 			}
 			else return false;
 		});
+		semMensajesPendientes.release();
 		usuario.recibirPendientes(pendientes);
 	}
 	
@@ -229,7 +259,13 @@ public class Servidor implements Runnable
 	
 	public void addMensajePendiente(Mensaje mensaje) throws IOException
 	{
+		try {
+			semMensajesPendientes.acquire();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				}
 		mensajesPendientes.add(mensaje);
+		semMensajesPendientes.release();
 	}
 	
 	public void start()
