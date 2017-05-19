@@ -36,7 +36,7 @@ public class Servidor implements Runnable
 	private List<Mensaje> mensajesPendientes;
 	private Logger logger;
 	private KeyPair keyPair;
-	private Semaphore semClientes;
+	private Semaphore semUsuarios;
 	private Semaphore semLogger;
 	private Semaphore semMensajesPendientes;
 	
@@ -45,7 +45,7 @@ public class Servidor implements Runnable
 		usuarios = new ArrayList<Usuario>();
 		mensajesPendientes = new ArrayList<Mensaje>();
 		thread = null;
-		semClientes = new Semaphore(1);
+		semUsuarios = new Semaphore(1);
 		semLogger = new Semaphore(1);
 		semMensajesPendientes = new Semaphore(1);
 		keyPair = RSA.generateKeyPair();
@@ -148,12 +148,12 @@ public class Servidor implements Runnable
 	private Optional<Usuario> getUsuario(String id)
 	{
 		try {
-			semClientes.acquire();
+			semUsuarios.acquire();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 				}
 		Optional<Usuario> op = usuarios.stream().filter(usuario->usuario.soy(id)).findFirst();
-		semClientes.release();
+		semUsuarios.release();
 		return op;
 	}
 	
@@ -169,12 +169,12 @@ public class Servidor implements Runnable
 		{
 			usuario = new Usuario(id, puerto, logger, semLogger);
 			try {
-				semClientes.acquire();
+				semUsuarios.acquire();
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 					}
 			usuarios.add(usuario);
-			semClientes.release();
+			semUsuarios.release();
 			log(Level.INFO,"Agrego al usuario " + id);
 		}
 		usuario.abrirSocket(socket, streamOut, streamIn);
