@@ -10,17 +10,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.file.NoSuchFileException;
 import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.FileHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import java.util.concurrent.Semaphore;
-
+import java.util.logging.Level;
 
 /**
  * El Servidor hace de repositorio de clientes, se encarga de autenticarlos, de guardar y mandar los
@@ -34,40 +29,20 @@ public class Servidor implements Runnable
 	private ServerSocket socketS;
 	private Thread thread;
 	private List<Mensaje> mensajesPendientes;
-	private Logger logger;
 	private KeyPair keyPair;
 	private Semaphore semUsuarios;
-	private Semaphore semLogger;
 	private Semaphore semMensajesPendientes;
+	private LogManager logger;
 	
 	public Servidor(int puerto)
 	{
 		usuarios = new ArrayList<Usuario>();
 		mensajesPendientes = new ArrayList<Mensaje>();
 		thread = null;
+		logger = new LogManager("/tmp/logFile.log");
 		semUsuarios = new Semaphore(1);
-		semLogger = new Semaphore(1);
 		semMensajesPendientes = new Semaphore(1);
 		keyPair = RSA.generateKeyPair();
-		logger = Logger.getLogger("MyLog");  
-	    FileHandler fh;
-	    try { 
-	    	try{
-	    		fh = new FileHandler("/tmp/logFile.log");  
-	    	} catch (NoSuchFileException e){
-	    		System.out.println("No se pudo abrir el archivo de logs: /tmp/logFile.log");
-	    		return;
-	    	}
-	        logger.addHandler(fh);
-	        SimpleFormatter formatter = new SimpleFormatter();  
-	        fh.setFormatter(formatter);
-	    } catch (SecurityException e) {  
-	        e.printStackTrace();  
-	    } catch (IOException e) {
-	        e.printStackTrace();  
-	    }
-	    logger.setLevel(Level.INFO);
-	    //logger.setUseParentHandlers(false); //para que no aparezca nada en la consola
 		try 
 		{
 			socketS = new ServerSocket(puerto);
@@ -118,10 +93,15 @@ public class Servidor implements Runnable
 		}
 	}
 	
+	public LogManager logger()
+	{
+		return logger;
+	}
+	
 	private void addThread(Socket socket)
 	{
 		log(Level.FINE, "Client accepted: " + socket);
-		ChatServerThread peticionCliente = new ChatServerThread(socket, logger);
+		ChatServerThread peticionCliente = new ChatServerThread(socket);
 	    try
 	    {
 	    	peticionCliente.open();
@@ -136,13 +116,7 @@ public class Servidor implements Runnable
 	
 	private void log(Level nivel, String msg)
 	{
-		try {
-			semLogger.acquire();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				}
-		logger.log(nivel, msg);
-		semLogger.release();
+		logger.log(nivel, "Servidor: " + msg);
 	}
 	
 	private Optional<Usuario> getUsuario(String id)
@@ -167,7 +141,7 @@ public class Servidor implements Runnable
 		}
 		else
 		{
-			usuario = new Usuario(id, puerto, logger, semLogger);
+			usuario = new Usuario(id, puerto);
 			try {
 				semUsuarios.acquire();
 				} catch (InterruptedException e) {

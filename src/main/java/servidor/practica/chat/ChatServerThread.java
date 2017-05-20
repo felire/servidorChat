@@ -7,7 +7,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *El ChatServerThread se encarga de recibir las request del cliente y enviarselas al servidor,
@@ -23,12 +22,12 @@ public class ChatServerThread extends Thread
 	private DataInputStream streamIn =  null;
 	private DataOutputStream streamOut = null;
 	private Socket socket;
-	private Logger logger;
+	private LogManager logger;
 	
-	public ChatServerThread(Socket socket, Logger logger)
+	public ChatServerThread(Socket socket)
 	{
 		this.socket = socket;
-		this.logger = logger;
+		this.logger = Servidor.obj().logger();
 	}
 	/**
 	 * manejo de strings recibidos por el usuario
@@ -57,7 +56,7 @@ public class ChatServerThread extends Thread
 	
 	private void log(Level nivel, String msg)
 	{
-		logger.log(nivel, socket.getPort() + ": " + msg);
+		logger.log(nivel,"ChatServerThread " + socket.getPort() + ": " + msg);
 	}
 
 	/**

@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.concurrent.Semaphore;
 
 /**
  * El usuario tiene el socket para comunicarse con el cliente,
@@ -26,17 +24,15 @@ public class Usuario
 	private String puerto;
 	private DataOutputStream streamOut;
 	private DataInputStream streamIn;
-	private Logger logger;
+	private LogManager logger;
 	private String token;
-	private Semaphore semaforo;
 
-	public Usuario(String id, String puerto, Logger logger, Semaphore semaforo)
+	public Usuario(String id, String puerto)
 	{
 		this.id = id;
 		this.puerto = puerto;
-		this.logger = logger;
+		this.logger = Servidor.obj().logger();
 		this.token = null;
-		this.semaforo = semaforo;
 	}
 	
 	public Boolean tieneToken()
@@ -70,13 +66,7 @@ public class Usuario
 	
 	private void log(Level nivel, String msg)
 	{
-		try {
-			semaforo.acquire();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				}
-		logger.log(nivel, id + ": " + msg);
-		semaforo.release();
+		logger.log(nivel,"Usuario " +id + ": " + msg);
 	}
 	
 	public String leer()
